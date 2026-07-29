@@ -1,0 +1,36 @@
+.wrap {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
+.wrap svg {
+  position: absolute;
+  inset: 0;
+}
+
+.track {
+  stroke: var(--surface-sunken);
+}
+
+.fill {
+  stroke: var(--accent);
+  transition: stroke-dasharray var(--dur) var(--ease);
+}
+
+.center {
+  position: relative;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.pct {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}

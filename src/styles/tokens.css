@@ -1,0 +1,144 @@
+/*
+ * PlanMe — Design Tokens
+ * 이 파일이 유일한 값의 출처입니다.
+ * 모든 *.module.css 는 리터럴 값 대신 var(--*) 만 사용합니다.
+ *
+ * 색은 docs/design/month-view.png 에서 직접 추출했습니다.
+ */
+
+:root {
+  /* ── Surface — 오프화이트 ───────────────────────────────
+   * 순백은 한 군데도 쓰지 않습니다. 흰 바탕에 회색 괘선을 그으면
+   * 아무리 여백을 줘도 캘린더 앱처럼 읽혀서, 지면 자체를 종이색으로 깔았습니다.
+   * 노란기(hue 40°)를 일정하게 유지하고 명도만 내려 한 장의 종이처럼 보이게 합니다. */
+  --bg: #f6f5f1; /* 앱 배경 · 사이드바 — 가장 깊은 종이색 */
+  --surface: #fbfaf7; /* 펼쳐진 지면 — 달력 · 우측 패널 */
+  --surface-sunken: #efede7; /* 활성 네비 · 눌린 면 */
+  --surface-card: #fdfcfa; /* 지면 위에 얹히는 카드 */
+
+  --border: #e6e3db; /* 카드 테두리 */
+  --divider: #edebe4; /* 달력 괘선 — 테두리보다 더 옅게 */
+
+  /* ── Text ──────────────────────────────────────────────
+   * 흰 지면 위 명도 대비를 기준으로 잡았습니다.
+   * text-3 까지는 본문에 써도 WCAG AA(4.5:1)를 넘기고,
+   * text-4 는 대비가 낮아 '읽지 않아도 되는 것'에만 씁니다. */
+  --text-1: #37352f; /* 11.8:1 — 순검정이 아닌 따뜻한 먹색 */
+  --text-2: #5f5c55; /* 6.4:1 */
+  --text-3: #757068; /* 4.7:1 — 캡션 · 보조 정보 */
+  --text-4: #b3afa6; /* 2.1:1 — 지난 달 날짜처럼 장식에 가까운 것 */
+
+  /* ── Accent ────────────────────────────────────────── */
+  --accent: #6e56cf;
+  /* accent 가 바뀌면 함께 따라오도록 계산합니다.
+   * 흰색이 아니라 지면색에 섞어야 액센트 배경만 차갑게 뜨지 않습니다. */
+  --accent-soft: color-mix(in srgb, var(--accent) 11%, var(--surface));
+  --accent-faint: color-mix(in srgb, var(--accent) 6%, transparent);
+  --accent-contrast: #fbfaf7;
+
+  /* 오늘 날짜 표식 — 지면에서 유일하게 꽉 찬 도형입니다. */
+  --today: #37352f;
+  --today-contrast: #fbfaf7;
+
+  /* 회색이 아니라 먹색을 옅게 깔아, 올려도 지면이 차가워지지 않게 합니다. */
+  --hover: rgba(55, 53, 47, 0.04);
+  --press: rgba(55, 53, 47, 0.08);
+
+  /* ── Tag — 색마다 세 단계 ──────────────────────────────
+   * solid : 점 · 막대 · 프로그레스 (배경 대비 3:1 이상)
+   * soft  : 칩 배경 (오프화이트에 색을 한 방울)
+   * text  : soft 위에 얹는 글자 (soft 대비 4.5:1 이상)
+   *
+   * 파스텔을 그대로 쓰면 글자가 읽히지 않아, 배경과 글자를
+   * 분리했습니다. 이름은 그대로 두고 값만 갈아 끼웠습니다. */
+  --tag-mint: #2b9a66; /* 3.5:1 */
+  --tag-blue: #3e63dd; /* 5.2:1 */
+  --tag-lilac: #6e56cf; /* 5.4:1 */
+  --tag-coral: #e54d2e; /* 3.8:1 */
+  --tag-honey: #bf8100; /* 3.3:1 — 노랑은 밝아서 한참 내려야 3:1 을 넘깁니다 */
+
+  /* soft 는 색을 지면에 9% 섞은 값입니다 — 흰색이 아니라 종이색에 섞어야
+   * 칩만 차갑게 떠오르지 않고 같은 종이 위에 얹힌 것처럼 보입니다. */
+  --tag-mint-soft: #e8f1ea;
+  --tag-blue-soft: #eaecf5;
+  --tag-lilac-soft: #eeebf3;
+  --tag-coral-soft: #faede9;
+  --tag-honey-soft: #f6efe1;
+
+  --tag-mint-text: #1c7549; /* 4.9:1 */
+  --tag-blue-text: #3358d4; /* 5.1:1 */
+  --tag-lilac-text: #6550b9; /* 5.2:1 */
+  --tag-coral-text: #ca3214; /* 4.6:1 */
+  --tag-honey-text: #9a5a00; /* 4.8:1 */
+
+  /* ── Typography — Pretendard ───────────────────────────
+   * Pretendard Variable 을 CDN 에서 dynamic subset 으로 받습니다(index.html).
+   * 한글 자소가 필요한 만큼만 내려와 첫 페인트가 빠릅니다. */
+  --font: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+
+  --fs-display: 28px;
+  --fs-title: 22px;
+  --fs-lg: 17px;
+  --fs-body: 15px;
+  --fs-sm: 13px;
+  --fs-cap: 11.5px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.25;
+  --lh-snug: 1.4;
+  --lh-body: 1.65;
+
+  --tracking-tight: -0.022em;
+  --tracking-wide: 0.06em;
+
+  /* ── Space (4 기반) ─────────────────────────────────── */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 24px;
+  --s8: 32px;
+  --s10: 40px;
+  --s12: 48px;
+
+  /* ── Radius ────────────────────────────────────────── */
+  --r-xs: 5px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-full: 999px;
+
+  /* ── Motion ────────────────────────────────────────── */
+  --dur: 300ms;
+  --dur-fast: 160ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ── Layout ────────────────────────────────────────── */
+  /* 달력 한 칸의 '최소' 높이 — 실제 높이는 남은 공간을 주 수만큼 나눠 갖습니다.
+   * px 로 못 박으면 창이 낮을 때 마지막 주가 잘려서 vh 를 섞었습니다. */
+  --cell-min-h: clamp(64px, 10vh, 120px);
+}
+
+/*
+ * 1024px 아래로는 페이지가 세로로 흐르므로 vh 로 재는 것이 의미가 없어집니다.
+ * 손가락으로 누를 수 있는 고정 높이로 바꿔 둡니다.
+ */
+@media (max-width: 1024px) {
+  :root {
+    --cell-min-h: 84px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --cell-min-h: 62px;
+  }
+}
+
+/* Settings 에서 액센트를 바꾸면 :root 인라인 스타일로 --accent 가 덮어써집니다. */

@@ -1,0 +1,250 @@
+.todayBtn {
+  padding: var(--s1) var(--s3);
+  margin-right: var(--s1);
+  border-radius: var(--r-full);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  transition:
+    color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+.todayBtn:hover {
+  color: var(--text-1);
+  background: var(--hover);
+}
+
+.arrow {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  color: var(--text-2);
+  transition:
+    color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+.arrow svg {
+  width: 16px;
+  height: 16px;
+}
+
+.arrow:hover {
+  color: var(--text-1);
+  background: var(--hover);
+}
+
+/* ── 7열 ──────────────────────────────────────────────── */
+
+.grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  padding: 0 var(--s8) var(--s6);
+  animation: fade var(--dur) var(--ease);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--s3) var(--s2);
+  border-top: 1px solid var(--divider);
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.day:not(:first-child) {
+  border-left: 1px solid var(--divider);
+}
+
+.day:hover {
+  background: var(--hover);
+}
+
+.day[data-selected],
+.day[data-selected]:hover {
+  background: var(--accent-faint);
+}
+
+.day[data-out] .weekday,
+.day[data-out] .date {
+  color: var(--text-4);
+}
+
+.dayHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 0 var(--s1);
+  margin-bottom: var(--s3);
+}
+
+.weekday {
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-3);
+  line-height: 1;
+}
+
+.date {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 var(--s1);
+  margin-left: auto;
+  border-radius: var(--r-full);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* 오늘만 검정 — 달력과 같은 규칙입니다. */
+.date[data-today] {
+  background: var(--today);
+  color: var(--today-contrast);
+}
+
+.dayBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ── 일정 칩 ──────────────────────────────────────────── */
+
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin-bottom: var(--s3);
+}
+
+.chip {
+  position: relative;
+  min-width: 0;
+  padding: var(--s1) var(--s2) var(--s1) var(--s3);
+  border-radius: var(--r-xs);
+  overflow: hidden;
+}
+
+/* 칩 왼쪽에 solid 태그색 한 줄 — soft 배경만으로는 구분이 약해서 */
+.chipBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+}
+
+/* 칩 안의 글자는 칩 자신의 태그색을 물려받습니다 (color 인라인). */
+.chipTime {
+  display: block;
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-medium);
+  line-height: 1.3;
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+.chipTitle {
+  display: block;
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* ── 할 일 ────────────────────────────────────────────── */
+
+.todos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.todo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  min-width: 0;
+  padding: 2px 0;
+}
+
+.todo :global(button) {
+  margin-top: 1px;
+}
+
+.todoTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-cap);
+  line-height: 1.4;
+  color: var(--text-1);
+  overflow-wrap: anywhere;
+  transition: color var(--dur) var(--ease);
+}
+
+.todoTitle[data-done] {
+  color: var(--text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--text-3);
+}
+
+/* 평소에는 숨었다가 그 열에 마우스를 올리면 나타납니다. */
+.add {
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.day:hover .add,
+.day[data-selected] .add,
+.add:focus-within {
+  opacity: 1;
+}
+
+@media (max-width: 1180px) {
+  .grid {
+    padding: 0 var(--s6) var(--s4);
+  }
+}
+
+@media (max-width: 1024px) {
+  /* 7열을 좁히기보다 가로로 밀어서 봅니다 — 열이 좁아지면 글자가 한 글자씩 끊깁니다. */
+  .grid {
+    flex: none;
+    grid-template-columns: repeat(7, minmax(128px, 1fr));
+    overflow-x: auto;
+  }
+
+  .day {
+    min-height: 280px;
+  }
+
+  .dayBody {
+    overflow-y: visible;
+  }
+
+  /* 마우스가 없으면 hover 로 숨긴 것을 영영 못 찾습니다. */
+  .add {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,43 @@
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s6);
+  padding: var(--s8) var(--s8) var(--s6);
+}
+
+.titleBlock {
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--fs-display);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-tight);
+}
+
+.subtitle {
+  margin-top: var(--s1);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.controls {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+@media (max-width: 1024px) {
+  .header {
+    padding: var(--s6) var(--s6) var(--s4);
+  }
+
+  .title {
+    font-size: var(--fs-title);
+  }
+}

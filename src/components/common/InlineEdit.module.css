@@ -1,0 +1,27 @@
+/*
+ * 표시와 입력의 padding/margin 을 똑같이 두어
+ * 편집으로 바뀌는 순간 글자가 한 픽셀도 움직이지 않게 합니다.
+ */
+.text,
+.input {
+  display: block;
+  width: 100%;
+  padding: 2px var(--s1);
+  margin: -2px calc(var(--s1) * -1);
+  border-radius: var(--r-xs);
+  text-align: left;
+}
+
+/* 누를 수 있다는 것만 아주 옅게 알립니다. */
+.text {
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.text:hover {
+  background: var(--hover);
+}
+
+.input {
+  background: var(--accent-faint);
+  box-shadow: inset 0 -1px 0 var(--accent);
+}

@@ -1,0 +1,34 @@
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  padding: var(--s2) 0;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+  text-align: left;
+  transition: color var(--dur) var(--ease);
+}
+
+.trigger:hover {
+  color: var(--text-2);
+}
+
+.plus {
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+  font-weight: var(--fw-regular);
+}
+
+.input {
+  width: 100%;
+  padding: var(--s2) 0 var(--s2) var(--s6);
+  font-size: var(--fs-sm);
+  color: var(--text-1);
+  border-bottom: 1px solid var(--accent);
+}
+
+.input::placeholder {
+  color: var(--text-3);
+}

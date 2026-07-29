@@ -1,0 +1,143 @@
+.cell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  /* 칸이 낮아지면 일정 목록이 먼저 잘립니다 — 칸이 행을 밀어내지 않게. */
+  overflow: hidden;
+  padding: var(--s3) var(--s3) var(--s2);
+  border-top: 1px solid var(--divider);
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
+}
+
+/* 첫 열을 제외하고 왼쪽 괘선 — 바깥 테두리는 그리지 않습니다. */
+.cell:not(:nth-child(7n + 1)) {
+  border-left: 1px solid var(--divider);
+}
+
+.cell:hover {
+  background: var(--hover);
+}
+
+/* 지면은 이미 흰색이므로, 선택은 액센트를 아주 옅게 깔아 표시합니다. */
+.cell[data-selected] {
+  background: var(--accent-faint);
+}
+
+.cell[data-selected]:hover {
+  background: var(--accent-faint);
+}
+
+.cell[data-out] .date {
+  color: var(--text-4);
+}
+
+.cell[data-out] .events {
+  opacity: 0.45;
+}
+
+.dateRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--s2);
+}
+
+.date {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 var(--s1);
+  border-radius: var(--r-full);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.cell[data-weekend] .date {
+  color: var(--text-2);
+}
+
+/* 오늘만 검정 — 지면 위에서 유일하게 채워진 도형입니다. */
+.date[data-today] {
+  background: var(--today);
+  color: var(--today-contrast);
+}
+
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.event {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.tagBar {
+  flex: none;
+  width: 3px;
+  height: 11px;
+  border-radius: var(--r-full);
+}
+
+.eventTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-cap);
+  line-height: 1.5;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer {
+  margin-top: auto;
+  padding-top: var(--s2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  min-height: 16px;
+}
+
+.more,
+.todoCount {
+  font-size: var(--fs-cap);
+  line-height: 1;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.more {
+  margin-right: auto;
+}
+
+.todoCount {
+  margin-left: auto;
+}
+
+.todoCount[data-all-done] {
+  color: var(--accent);
+}
+
+@media (max-width: 1024px) {
+  .cell {
+    padding: var(--s2);
+  }
+
+  .footer {
+    display: none;
+  }
+}

@@ -1,0 +1,66 @@
+.wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--s8) var(--s6);
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  padding-bottom: var(--s2);
+}
+
+.weekday {
+  padding-left: var(--s3);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-3);
+  line-height: 1;
+}
+
+/*
+ * 주 수만큼 행을 만들고 남은 높이를 1fr 로 나눕니다.
+ * grid-auto-rows 로 두면 행이 제 높이를 우겨서 마지막 주가 잘렸습니다.
+ * minmax 의 최소값은 정말 공간이 없을 때만 걸리고, 그때만 스크롤이 생깁니다.
+ */
+.grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: repeat(var(--weeks, 6), minmax(var(--cell-min-h), 1fr));
+  overflow-y: auto;
+  animation: fade var(--dur) var(--ease);
+}
+
+/* 접근성 트리에만 존재하는 행 — 레이아웃은 격자가 그대로 맡습니다. */
+.row {
+  display: contents;
+}
+
+/* 월 이동은 페이드만 — 슬라이드하지 않습니다. */
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1024px) {
+  .wrap {
+    flex: none;
+    padding: 0 var(--s6) var(--s4);
+  }
+
+  /* 페이지가 스크롤되므로 격자는 제 높이를 그대로 가집니다. */
+  .grid {
+    flex: none;
+    overflow-y: visible;
+    grid-template-rows: repeat(var(--weeks, 6), minmax(var(--cell-min-h), auto));
+  }
+}

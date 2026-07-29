@@ -1,0 +1,222 @@
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.body {
+  padding: 0 var(--s8) var(--s10);
+  max-width: 940px;
+}
+
+.summary {
+  padding-bottom: var(--s8);
+  margin-bottom: var(--s8);
+  border-bottom: 1px solid var(--divider);
+}
+
+.summaryHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s4);
+  margin-bottom: var(--s3);
+}
+
+.summaryLabel {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryStudy {
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s12);
+}
+
+.col {
+  min-width: 0;
+}
+
+/* ── 일정 타임라인 ─────────────────────────────────────── */
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--s1);
+}
+
+.slot {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  min-width: 0;
+  padding: var(--s2) 0;
+}
+
+.slotTime {
+  flex: none;
+  width: 52px;
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  transform: translateY(-2px);
+}
+
+.slotBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+}
+
+.slotTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-snug);
+  color: var(--text-1);
+  overflow-wrap: anywhere;
+}
+
+.slotEnd {
+  flex: none;
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  padding: var(--s2) 0 var(--s3);
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+
+/* ── 할 일 ────────────────────────────────────────────── */
+
+.todos {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--s1);
+}
+
+.todo {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+  padding: var(--s2) 0;
+}
+
+.todoTitle {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-snug);
+  color: var(--text-1);
+  overflow-wrap: anywhere;
+  transition: color var(--dur) var(--ease);
+}
+
+.todoTitle[data-done] {
+  color: var(--text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--text-3);
+}
+
+/* ── 메모 ─────────────────────────────────────────────── */
+
+.noteBlock {
+  margin-top: var(--s10);
+}
+
+.note {
+  width: 100%;
+  min-height: 132px;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-1);
+}
+
+.note::placeholder {
+  color: var(--text-3);
+}
+
+/* ── 삭제 ─────────────────────────────────────────────── */
+
+.remove {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  font-size: var(--fs-body);
+  line-height: 1;
+  color: var(--text-3);
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.slot:hover .remove,
+.todo:hover .remove,
+.remove:focus-visible {
+  opacity: 1;
+}
+
+.remove:hover {
+  background: var(--press);
+  color: var(--text-1);
+}
+
+@media (max-width: 1180px) {
+  .cols {
+    gap: var(--s8);
+  }
+}
+
+@media (max-width: 1024px) {
+  /* 페이지가 스크롤되므로 뷰가 자체 스크롤을 갖지 않습니다. */
+  .scroll {
+    flex: none;
+    overflow-y: visible;
+  }
+
+  .body {
+    padding: 0 var(--s6) var(--s8);
+  }
+
+  .cols {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s8);
+  }
+
+  .summary {
+    padding-bottom: var(--s5);
+    margin-bottom: var(--s5);
+  }
+
+  .noteBlock {
+    margin-top: var(--s8);
+  }
+}

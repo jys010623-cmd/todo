@@ -1,0 +1,12 @@
+.track {
+  height: 3px;
+  border-radius: var(--r-full);
+  background: var(--divider);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: var(--r-full);
+  transition: width var(--dur) var(--ease);
+}

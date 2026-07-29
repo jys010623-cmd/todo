@@ -1,0 +1,24 @@
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
+}
+
+.title {
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-3);
+  line-height: 1;
+}
+
+.meta {
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-medium);
+  color: var(--text-3);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}

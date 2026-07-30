@@ -29,6 +29,31 @@ function emptyMandal(title: string): Mandal {
   }
 }
 
+/**
+ * 같은 날짜·과목의 기록은 하나로 합칩니다.
+ * 버튼으로 쌓을 때와 타이머로 멈출 때가 같은 길을 타야, 둘을 섞어 써도 어긋나지 않습니다.
+ */
+function addStudyMinutes(
+  state: PlannerData,
+  date: ISODate,
+  subjectId: string,
+  minutes: number,
+): PlannerData {
+  const existing = state.studyLogs.find((l) => l.date === date && l.subjectId === subjectId)
+  if (existing) {
+    const next = Math.max(0, existing.minutes + minutes)
+    return {
+      ...state,
+      studyLogs: state.studyLogs.map((l) => (l.id === existing.id ? { ...l, minutes: next } : l)),
+    }
+  }
+  if (minutes <= 0) return state
+  return {
+    ...state,
+    studyLogs: [...state.studyLogs, { id: uid('log'), date, subjectId, minutes }],
+  }
+}
+
 /** 마인드맵은 언제나 루트 하나로 시작합니다 — 가운데가 없으면 그릴 것이 없습니다. */
 function emptyMindMap(title: string): MindMap {
   return {
@@ -56,6 +81,11 @@ export type Action =
   | { type: 'DELETE_SUBJECT'; id: string }
   /** minutes 는 증분입니다. 같은 날짜+과목 로그는 하나로 합쳐집니다. */
   | { type: 'LOG_STUDY'; date: ISODate; subjectId: string; minutes: number }
+  /** startedAt 은 호출부가 넘깁니다 — 리듀서가 시계를 읽으면 같은 입력에 다른 결과가 나옵니다. */
+  | { type: 'START_TIMER'; subjectId: string; startedAt: number }
+  /** 흘러간 시간은 화면이 재서 넘깁니다. 멈추는 것과 기록하는 것은 한 동작입니다. */
+  | { type: 'STOP_TIMER'; date: ISODate; minutes: number }
+  | { type: 'CANCEL_TIMER' }
   | { type: 'SET_NOTE'; date: ISODate; text: string }
   | { type: 'ADD_GOAL'; title: string; tag: TagColor }
   | { type: 'UPDATE_GOAL'; id: string; patch: Partial<Goal> }
@@ -187,30 +217,29 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
         ...state,
         subjects: state.subjects.filter((s) => s.id !== action.id),
         studyLogs: state.studyLogs.filter((l) => l.subjectId !== action.id),
+        // 없는 과목을 재고 있으면 멈출 수도, 기록할 수도 없습니다.
+        timer: state.timer?.subjectId === action.id ? undefined : state.timer,
       }
 
-    case 'LOG_STUDY': {
-      const existing = state.studyLogs.find(
-        (l) => l.date === action.date && l.subjectId === action.subjectId,
-      )
-      if (existing) {
-        const minutes = Math.max(0, existing.minutes + action.minutes)
-        return {
-          ...state,
-          studyLogs: state.studyLogs.map((l) =>
-            l.id === existing.id ? { ...l, minutes } : l,
-          ),
-        }
-      }
-      if (action.minutes <= 0) return state
-      return {
-        ...state,
-        studyLogs: [
-          ...state.studyLogs,
-          { id: uid('log'), date: action.date, subjectId: action.subjectId, minutes: action.minutes },
-        ],
-      }
+    case 'LOG_STUDY':
+      return addStudyMinutes(state, action.date, action.subjectId, action.minutes)
+
+    case 'START_TIMER': {
+      if (!state.subjects.some((s) => s.id === action.subjectId)) return state
+      return { ...state, timer: { subjectId: action.subjectId, startedAt: action.startedAt } }
     }
+
+    case 'STOP_TIMER': {
+      const timer = state.timer
+      if (!timer) return state
+      // 재는 것과 기록하는 것이 한 번에 일어나야 합니다. 나눠 두면 그 사이에
+      // 새로고침되었을 때 시간만 사라집니다.
+      const next = addStudyMinutes(state, action.date, timer.subjectId, action.minutes)
+      return { ...next, timer: undefined }
+    }
+
+    case 'CANCEL_TIMER':
+      return { ...state, timer: undefined }
 
     case 'SET_NOTE': {
       const notes = { ...state.notes }

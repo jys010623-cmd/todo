@@ -176,6 +176,63 @@
   color: var(--accent);
 }
 
+/* ── 타이머 ───────────────────────────────────────────── */
+
+.start {
+  padding: 3px var(--s3);
+  border-radius: var(--r-full);
+  background: var(--accent-soft);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+  color: var(--accent);
+  white-space: nowrap;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.start:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+}
+
+/*
+ * 돌고 있는 과목만 액센트로 물들입니다.
+ * 목록이 길어져도 지금 재고 있는 것이 어느 줄인지 한눈에 보여야 합니다.
+ */
+.subject[data-running] .name {
+  color: var(--accent);
+}
+
+.clock {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  line-height: 1.5;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  /* 초가 바뀔 때마다 폭이 흔들리지 않게 */
+  min-width: 62px;
+}
+
+.stop {
+  padding: 3px var(--s3);
+  border-radius: var(--r-full);
+  background: var(--accent);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+  color: var(--accent-contrast);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.stop:hover {
+  opacity: 0.88;
+}
+
+.stopHint {
+  opacity: 0.8;
+}
+
 .todayMark {
   margin-left: var(--s2);
   font-size: var(--fs-cap);

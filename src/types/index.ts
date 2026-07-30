@@ -40,6 +40,18 @@ export interface StudyLog {
   minutes: number
 }
 
+/**
+ * 돌고 있는 공부 타이머. 한 번에 하나만 돕니다.
+ *
+ * 흘러간 시간을 세어 두지 않고 '언제 시작했는지' 만 들고 있습니다.
+ * 그래야 탭을 닫거나 다른 화면에 다녀와도, 화면이 멈춰 있던 동안까지 그대로 이어집니다.
+ */
+export interface StudyTimer {
+  subjectId: string
+  /** epoch ms */
+  startedAt: number
+}
+
 /** 목표는 '언제까지'가 있는 것과 '언젠가'로 미뤄둔 것으로 나뉩니다. */
 export type GoalStatus = 'active' | 'someday' | 'done'
 
@@ -164,5 +176,7 @@ export interface PlannerData {
   wishes: WishItem[]
   mandals: Mandal[]
   mindmaps: MindMap[]
+  /** 안 돌고 있으면 없습니다 */
+  timer?: StudyTimer
   settings: Settings
 }

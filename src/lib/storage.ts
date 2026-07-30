@@ -8,6 +8,8 @@ import {
   type MindNode,
   type PlannerData,
   type Settings,
+  type StudyTimer,
+  type Subject,
   type TagColor,
 } from '@/types'
 
@@ -157,6 +159,24 @@ function migrateMindMap(raw: unknown): MindMap {
   return { id, title, nodes }
 }
 
+/**
+ * 돌던 타이머는 새로고침해도 이어져야 합니다.
+ * 다만 시작 시각이 깨졌거나 과목이 사라졌으면 멈출 수도 기록할 수도 없으니 버립니다.
+ * 미래에서 시작한 것으로 되어 있으면 흘러간 시간이 음수가 되어 그것도 버립니다.
+ */
+function migrateTimer(raw: unknown, subjects: Subject[]): StudyTimer | undefined {
+  const t = raw as Partial<StudyTimer> | null | undefined
+  if (!t || typeof t !== 'object') return undefined
+
+  const startedAt = finite(t.startedAt)
+  if (startedAt === undefined || startedAt <= 0 || startedAt > Date.now()) return undefined
+
+  const subjectId = asText(t.subjectId)
+  if (!subjectId || !subjects.some((s) => s.id === subjectId)) return undefined
+
+  return { subjectId, startedAt }
+}
+
 /** id 가 비어 있을 때만 쓰는 결정적 대체값 — 새로고침해도 같은 값이 나옵니다. */
 function hash(s: string): number {
   let h = 0
@@ -180,6 +200,12 @@ export function parseData(raw: unknown): PlannerData | null {
     const notes =
       typeof parsed.notes === 'object' && parsed.notes !== null ? parsed.notes : {}
 
+    // 타이머가 가리키는 과목이 아직 있는지 확인해야 해서 먼저 만듭니다.
+    const subjects = asArray<PlannerData['subjects'][number]>(parsed.subjects).map((s) => ({
+      ...s,
+      tag: migrateTag(s.tag),
+    }))
+
     return {
       version: 1,
       events: asArray<PlannerData['events'][number]>(parsed.events).map((e) => ({
@@ -187,10 +213,7 @@ export function parseData(raw: unknown): PlannerData | null {
         tag: migrateTag(e.tag),
       })),
       todos: asArray(parsed.todos),
-      subjects: asArray<PlannerData['subjects'][number]>(parsed.subjects).map((s) => ({
-        ...s,
-        tag: migrateTag(s.tag),
-      })),
+      subjects,
       studyLogs: asArray(parsed.studyLogs),
       notes,
       // 나중에 추가된 영역들 — 예전에 저장된 데이터에는 아예 없습니다.
@@ -202,6 +225,7 @@ export function parseData(raw: unknown): PlannerData | null {
       wishes: asArray(parsed.wishes),
       mandals: asArray(parsed.mandals).map(migrateMandal),
       mindmaps: asArray(parsed.mindmaps).map(migrateMindMap),
+      timer: migrateTimer(parsed.timer, subjects),
       settings: migrateSettings(parsed.settings),
     }
   } catch {

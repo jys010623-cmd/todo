@@ -73,7 +73,45 @@
   outline-offset: 1px;
 }
 
+/*
+ * 갈래마다 다른 색을 괘선에 씁니다.
+ * 칸 배경까지 물들이면 여덟 색이 한꺼번에 떠서 글자가 안 읽힙니다 — 경계선만.
+ */
+.block[data-tag='mint'] {
+  background: color-mix(in srgb, var(--tag-mint) 40%, var(--divider));
+}
+.block[data-tag='blue'] {
+  background: color-mix(in srgb, var(--tag-blue) 40%, var(--divider));
+}
+.block[data-tag='lilac'] {
+  background: color-mix(in srgb, var(--tag-lilac) 40%, var(--divider));
+}
+.block[data-tag='coral'] {
+  background: color-mix(in srgb, var(--tag-coral) 40%, var(--divider));
+}
+.block[data-tag='honey'] {
+  background: color-mix(in srgb, var(--tag-honey) 40%, var(--divider));
+}
+
+/* 세부 목표를 옮겨 적은 가운데 칸도 같은 색을 아주 옅게 깝니다. */
+.block[data-tag='mint'] .cell[data-mirror] {
+  background: var(--tag-mint-soft);
+}
+.block[data-tag='blue'] .cell[data-mirror] {
+  background: var(--tag-blue-soft);
+}
+.block[data-tag='lilac'] .cell[data-mirror] {
+  background: var(--tag-lilac-soft);
+}
+.block[data-tag='coral'] .cell[data-mirror] {
+  background: var(--tag-coral-soft);
+}
+.block[data-tag='honey'] .cell[data-mirror] {
+  background: var(--tag-honey-soft);
+}
+
 .cell {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,6 +121,78 @@
   background: var(--surface);
   overflow: hidden;
   transition: background-color var(--dur-fast) var(--ease);
+}
+
+/* 해낸 칸 — 글자를 지우지 않고 흐리게만 둡니다. */
+.cell[data-done] .cellText {
+  color: var(--text-4);
+  text-decoration: line-through;
+  text-decoration-color: var(--text-4);
+}
+
+/* ── 칸 위의 두 버튼 — 평소에는 숨어 있습니다 ────────────── */
+
+.check,
+.send {
+  position: absolute;
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+
+.cell:hover .check,
+.cell:hover .send,
+.check:focus-visible,
+.send:focus-visible,
+.cell[data-done] .check {
+  opacity: 1;
+}
+
+.check {
+  top: 3px;
+  left: 3px;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-full);
+  background: var(--surface-card);
+}
+
+.check:hover {
+  border-color: var(--text-3);
+}
+
+.cell[data-done] .check {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.send {
+  top: 3px;
+  right: 3px;
+  width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-xs);
+  background: var(--surface-card);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-3);
+}
+
+.send:hover {
+  color: var(--accent);
+}
+
+/* 손가락에는 hover 가 없어 늘 보여 줍니다. */
+@media (hover: none) {
+  .check,
+  .send {
+    opacity: 1;
+  }
 }
 
 .cell[data-empty] {
@@ -112,6 +222,12 @@
   background: var(--surface-sunken);
 }
 
+/* 가운데 칸은 세부 목표와 그 갈래의 진행을 위아래로 보여 줍니다. */
+.cell[data-mirror] {
+  flex-direction: column;
+  gap: 2px;
+}
+
 .mirrorText {
   font-size: var(--fs-cap);
   font-weight: var(--fw-medium);
@@ -119,6 +235,18 @@
   color: var(--text-2);
   text-align: center;
   overflow-wrap: anywhere;
+}
+
+.blockCount {
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.blockCount[data-all] {
+  color: var(--accent);
 }
 
 .cellText {
@@ -129,12 +257,24 @@
   overflow-wrap: anywhere;
 }
 
+.sent {
+  max-width: 760px;
+  margin-top: var(--s4);
+  font-size: var(--fs-sm);
+  color: var(--accent);
+}
+
 .hint {
   max-width: 760px;
   margin-top: var(--s6);
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
   color: var(--text-3);
+}
+
+.hint b {
+  font-weight: var(--fw-semibold);
+  color: var(--text-2);
 }
 
 .empty {

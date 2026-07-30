@@ -8,17 +8,20 @@ import type { MindMap, MindNode } from '@/types'
  * 않아 글자 수로 높이를 추정하면 한 줄씩 어긋나서 가지가 엉뚱한 데 붙습니다.
  */
 
-/** 노드 폭은 고정입니다. 폭까지 내용에 맞추면 열이 들쭉날쭉해져 트리로 안 읽힙니다. */
-export const NODE_W = 168
+/**
+ * 노드 폭은 고정입니다. 폭까지 내용에 맞추면 열이 들쭉날쭉해져 트리로 안 읽힙니다.
+ * 168px 은 한글 열 몇 자에서 줄이 바뀌어 답답했습니다 — 한 줄에 더 담기게 넓혔습니다.
+ */
+export const NODE_W = 224
 
 /** 열 사이 — 가지가 휘어질 공간 */
-const H_GAP = 56
+const H_GAP = 60
 
 /** 형제 사이 */
-const V_GAP = 10
+const V_GAP = 12
 
 /** 아직 재기 전의 노드에 쓰는 값. 한 줄짜리 노드의 높이입니다. */
-const FALLBACK_H = 34
+const FALLBACK_H = 40
 
 export type Side = 'left' | 'right'
 

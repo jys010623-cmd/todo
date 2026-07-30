@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { InlineAdd } from '@/components/common/InlineAdd'
 import { InlineEdit } from '@/components/common/InlineEdit'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { todayISO } from '@/lib/date'
 import { NODE_W, layoutMindMap, type PlacedNode } from '@/lib/mindmap'
 import { usePlanner } from '@/store/PlannerContext'
 import { TAG_COLORS } from '@/types'
@@ -54,6 +55,22 @@ export function MindMapView() {
   /** 방금 만든 노드를 바로 고칠 수 있도록, 추가 입력을 연 노드를 기억합니다. */
   const [addingTo, setAddingTo] = useState<string | null>(null)
 
+  /**
+   * 판 전체를 키우고 줄입니다.
+   * 노드 높이는 offsetHeight 로 재는데 이 값은 transform 의 영향을 받지 않아,
+   * 확대해도 배치 계산은 그대로입니다.
+   */
+  const [zoom, setZoom] = useState(1)
+  const step = (d: number) => setZoom((z) => Math.min(1.6, Math.max(0.6, Math.round((z + d) * 10) / 10)))
+
+  /** 보낸 것은 다른 화면으로 가 버려, 눌렀는데 아무 일도 없어 보이지 않게 한 줄 남깁니다. */
+  const [sent, setSent] = useState<string | null>(null)
+  useEffect(() => {
+    if (!sent) return
+    const timer = window.setTimeout(() => setSent(null), 4000)
+    return () => window.clearTimeout(timer)
+  }, [sent])
+
   const nodeCount = current ? current.nodes.length : 0
 
   return (
@@ -64,6 +81,35 @@ export function MindMapView() {
           current ? `노드 ${nodeCount}개` : '가운데 하나에서 생각을 가지처럼 펼칩니다'
         }
       >
+        {current && (
+          <div className={styles.zoom}>
+            <button
+              type="button"
+              className={styles.zoomButton}
+              aria-label="축소"
+              onClick={() => step(-0.2)}
+            >
+              −
+            </button>
+            <button
+              type="button"
+              className={styles.zoomLevel}
+              aria-label="원래 크기로"
+              onClick={() => setZoom(1)}
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              className={styles.zoomButton}
+              aria-label="확대"
+              onClick={() => step(0.2)}
+            >
+              +
+            </button>
+          </div>
+        )}
+
         {mindmaps.length > 1 && (
           <select
             className={styles.picker}
@@ -103,9 +149,18 @@ export function MindMapView() {
             </div>
 
             <div className={styles.canvasScroll}>
+              {/* 늘어난 판이 차지할 자리는 바깥이 맡습니다 — 안쪽은 원래 좌표 그대로. */}
+              <div
+                className={styles.sizer}
+                style={{ width: layout.width * zoom, height: layout.height * zoom }}
+              >
               <div
                 className={styles.canvas}
-                style={{ width: layout.width, height: layout.height }}
+                style={{
+                  width: layout.width,
+                  height: layout.height,
+                  transform: zoom === 1 ? undefined : `scale(${zoom})`,
+                }}
                 role="tree"
                 aria-label={`${current.title} 마인드맵`}
               >
@@ -166,15 +221,30 @@ export function MindMapView() {
                         nodeId: placed.node.id,
                       })
                     }
+                    onSend={() => {
+                      dispatch({
+                        type: 'ADD_TODO',
+                        date: todayISO(),
+                        title: placed.node.text,
+                      })
+                      setSent(`'${placed.node.text}' 를 오늘 할 일로 보냈습니다`)
+                    }}
                   />
                 ))}
               </div>
+              </div>
             </div>
 
+            {sent && (
+              <p className={styles.sent} role="status">
+                {sent}
+              </p>
+            )}
+
             <p className={styles.hint}>
-              노드에 올리면 나오는 <b>+</b> 로 가지를 뻗고, <b>×</b> 로 그 아래를 함께
-              지웁니다. 가지 끝의 동그라미를 누르면 접힙니다. 가운데에서 뻗은 갈래는 좌우로
-              번갈아 놓입니다.
+              노드에 올리면 나오는 <b>+</b> 로 가지를 뻗고, <b>→</b> 로 오늘 할 일에 보내고,
+              <b>×</b> 로 그 아래를 함께 지웁니다. 가지 끝의 동그라미를 누르면 접힙니다.
+              판이 크면 위쪽 <b>+ −</b> 로 키우고 줄입니다.
             </p>
           </>
         ) : (
@@ -203,6 +273,7 @@ interface NodeProps {
   onAddChild: (text: string) => void
   onDelete: () => void
   onToggle: () => void
+  onSend: () => void
 }
 
 function Node({
@@ -215,6 +286,7 @@ function Node({
   onAddChild,
   onDelete,
   onToggle,
+  onSend,
 }: NodeProps) {
   const { node, x, y, depth, side, childCount } = placed
   const inputRef = useRef<HTMLInputElement>(null)
@@ -265,6 +337,16 @@ function Node({
         >
           +
         </button>
+        {node.text.trim() && (
+          <button
+            type="button"
+            className={styles.tool}
+            aria-label={`${node.text} 오늘 할 일로 보내기`}
+            onClick={onSend}
+          >
+            →
+          </button>
+        )}
         {!isRoot && (
           <button
             type="button"

@@ -86,6 +86,12 @@ export interface WishItem {
  * 81칸을 그대로 들고 있으면 가운데와 바깥의 중복을 직접 관리해야 해서,
  * 겹치지 않는 최소 단위만 저장하고 화면에서 펼칩니다.
  */
+/** 만다라트의 실행 항목 한 칸 — 적는 것과 해낸 것을 함께 들고 있습니다. */
+export interface MandalAction {
+  text: string
+  done: boolean
+}
+
 export interface Mandal {
   id: string
   title: string
@@ -93,7 +99,7 @@ export interface Mandal {
   /** 세부 목표 8개 */
   subGoals: string[]
   /** subGoals[i] 의 실행 항목 8개 */
-  actions: string[][]
+  actions: MandalAction[][]
 }
 
 /**

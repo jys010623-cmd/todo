@@ -23,7 +23,9 @@ function emptyMandal(title: string): Mandal {
     title,
     core: '',
     subGoals: Array.from({ length: 8 }, () => ''),
-    actions: Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => '')),
+    actions: Array.from({ length: 8 }, () =>
+      Array.from({ length: 8 }, () => ({ text: '', done: false })),
+    ),
   }
 }
 
@@ -71,6 +73,7 @@ export type Action =
   | { type: 'DELETE_MANDAL'; id: string }
   /** 만다라트의 한 칸. sub 가 없으면 핵심, action 이 없으면 세부 목표입니다. */
   | { type: 'SET_MANDAL_CELL'; id: string; sub?: number; action?: number; text: string }
+  | { type: 'TOGGLE_MANDAL_ACTION'; id: string; sub: number; action: number }
   | { type: 'ADD_MINDMAP'; title: string }
   | { type: 'UPDATE_MINDMAP'; id: string; patch: Partial<Omit<MindMap, 'nodes'>> }
   | { type: 'DELETE_MINDMAP'; id: string }
@@ -342,12 +345,31 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
           return {
             ...m,
             actions: m.actions.map((row, i) =>
-              i === action.sub ? row.map((a, j) => (j === action.action ? text : a)) : row,
+              i === action.sub
+                ? row.map((a, j) => (j === action.action ? { ...a, text } : a))
+                : row,
             ),
           }
         }),
       }
     }
+
+    case 'TOGGLE_MANDAL_ACTION':
+      return {
+        ...state,
+        mandals: state.mandals.map((m) =>
+          m.id === action.id
+            ? {
+                ...m,
+                actions: m.actions.map((row, i) =>
+                  i === action.sub
+                    ? row.map((a, j) => (j === action.action ? { ...a, done: !a.done } : a))
+                    : row,
+                ),
+              }
+            : m,
+        ),
+      }
 
     case 'ADD_MINDMAP': {
       const title = action.title.trim()

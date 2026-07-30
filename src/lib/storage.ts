@@ -3,6 +3,7 @@ import {
   TAG_COLORS,
   type Goal,
   type Mandal,
+  type MandalAction,
   type MindMap,
   type MindNode,
   type PlannerData,
@@ -67,6 +68,16 @@ function migrateSettings(raw: unknown): Settings {
   }
 }
 
+/**
+ * 실행 항목은 원래 문자열이었고 지금은 { text, done } 입니다.
+ * 예전에 적어 둔 글이 사라지지 않도록 읽는 시점에 옮깁니다.
+ */
+function migrateAction(raw: unknown): MandalAction {
+  if (typeof raw === 'string') return { text: raw, done: false }
+  const a = (raw ?? {}) as Partial<MandalAction>
+  return { text: asText(a.text), done: a.done === true }
+}
+
 /** 만다라트는 칸 수가 고정이라, 모자라거나 넘치면 화면에서 바로 깨집니다. */
 function migrateMandal(raw: unknown): Mandal {
   const m = (raw ?? {}) as Partial<Mandal>
@@ -80,7 +91,7 @@ function migrateMandal(raw: unknown): Mandal {
     subGoals: Array.from({ length: SUB_GOALS }, (_, i) => asText(subGoals[i])),
     actions: Array.from({ length: SUB_GOALS }, (_, i) => {
       const row = asArray<unknown>(actions[i])
-      return Array.from({ length: ACTIONS }, (_, j) => asText(row[j]))
+      return Array.from({ length: ACTIONS }, (_, j) => migrateAction(row[j]))
     }),
   }
 }

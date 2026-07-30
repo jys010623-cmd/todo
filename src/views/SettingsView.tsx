@@ -98,6 +98,25 @@ export function SettingsView() {
 
         <section className={styles.row}>
           <div className={styles.label}>
+            <h2 className={styles.labelTitle}>테마</h2>
+            <p className={styles.labelBody}>
+              시스템을 고르면 기기 설정을 따라가, 밤이 되면 저절로 어두워집니다.
+            </p>
+          </div>
+          <Segmented
+            label="테마"
+            value={settings.theme}
+            options={[
+              { value: 'light', label: '밝게' },
+              { value: 'dark', label: '어둡게' },
+              { value: 'system', label: '시스템' },
+            ]}
+            onChange={(theme) => dispatch({ type: 'SET_SETTINGS', patch: { theme } })}
+          />
+        </section>
+
+        <section className={styles.row}>
+          <div className={styles.label}>
             <h2 className={styles.labelTitle}>주 시작 요일</h2>
             <p className={styles.labelBody}>달력과 주간 뷰의 첫 칸이 바뀝니다.</p>
           </div>

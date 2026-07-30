@@ -28,8 +28,12 @@
   --text-3: #757068; /* 4.7:1 — 캡션 · 보조 정보 */
   --text-4: #b3afa6; /* 2.1:1 — 지난 달 날짜처럼 장식에 가까운 것 */
 
-  /* ── Accent ────────────────────────────────────────── */
-  --accent: #6e56cf;
+  /* ── Accent ──────────────────────────────────────────
+   * 설정에서 고른 색은 --accent-base 로 들어옵니다(:root 인라인).
+   * 인라인 스타일은 규칙보다 세서, --accent 를 직접 주입하면 어두운 테마에서
+   * 밝기를 손볼 수 없습니다. 한 겹 두고 여기서 계산합니다. */
+  --accent-base: #6e56cf;
+  --accent: var(--accent-base);
   /* accent 가 바뀌면 함께 따라오도록 계산합니다.
    * 흰색이 아니라 지면색에 섞어야 액센트 배경만 차갑게 뜨지 않습니다. */
   --accent-soft: color-mix(in srgb, var(--accent) 11%, var(--surface));
@@ -128,6 +132,67 @@
 
   /* 좁은 화면에서 아래에 고정되는 메뉴 막대의 높이 — 본문 아래 여백과 맞춰야 합니다. */
   --mobile-nav-h: 52px;
+}
+
+/*
+ * ── 어두운 테마 ────────────────────────────────────────────
+ *
+ * 회색으로 뒤집지 않습니다. 이 지면의 정체성은 '따뜻한 종이' 라서, 노란기(hue 40°)를
+ * 그대로 두고 명도만 뒤집었습니다. 차가운 회색으로 바꾸면 다른 앱이 됩니다.
+ *
+ * 값의 역할은 밝은 테마와 하나씩 짝이 맞습니다 — 대비도 같은 기준으로 잡았습니다
+ * (text-3 까지 본문에 써도 4.5:1 을 넘고, text-4 는 장식용).
+ */
+:root[data-theme='dark'] {
+  /* 브라우저가 스크롤바·기본 폼을 어둡게 그리도록 */
+  color-scheme: dark;
+
+  --bg: #171614;
+  --surface: #1e1d1a;
+  --surface-sunken: #2a2824;
+  --surface-card: #232220;
+
+  --border: #35322c;
+  --divider: #2b2925;
+
+  --text-1: #ece9e2; /* 13.6:1 */
+  --text-2: #b5b0a6; /* 7.9:1 */
+  --text-3: #8e8980; /* 4.9:1 */
+  --text-4: #5d5952; /* 2.5:1 — 지난 달 날짜처럼 읽지 않아도 되는 것 */
+
+  /* 오늘 표식은 지면에서 유일하게 꽉 찬 도형 — 밝은 테마의 먹색 자리에 밝은 색이 옵니다. */
+  --today: #ece9e2;
+  --today-contrast: #1e1d1a;
+
+  --hover: rgba(236, 233, 226, 0.05);
+  --press: rgba(236, 233, 226, 0.1);
+
+  /* 고른 색을 그대로 쓰면 어두운 지면에서 가라앉습니다 — 흰색을 섞어 띄웁니다. */
+  --accent: color-mix(in srgb, var(--accent-base) 62%, #fff);
+  --accent-soft: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  --accent-faint: color-mix(in srgb, var(--accent) 12%, transparent);
+  --accent-contrast: #171614;
+
+  /* 태그도 밝은 쪽으로 올립니다. 어두운 지면에서 원래 값은 형태가 안 보입니다. */
+  --tag-mint: #4cc38a;
+  --tag-blue: #7b9cff;
+  --tag-lilac: #a08cff;
+  --tag-coral: #ff8f70;
+  --tag-honey: #e0b03c;
+
+  /* 지면에 색을 한 방울 — 밝은 테마와 같은 방식이되 어두운 쪽으로 */
+  --tag-mint-soft: color-mix(in srgb, var(--tag-mint) 16%, var(--surface));
+  --tag-blue-soft: color-mix(in srgb, var(--tag-blue) 16%, var(--surface));
+  --tag-lilac-soft: color-mix(in srgb, var(--tag-lilac) 16%, var(--surface));
+  --tag-coral-soft: color-mix(in srgb, var(--tag-coral) 16%, var(--surface));
+  --tag-honey-soft: color-mix(in srgb, var(--tag-honey) 16%, var(--surface));
+
+  /* soft 가 어두우므로 글자는 태그색 그대로가 가장 잘 읽힙니다. */
+  --tag-mint-text: var(--tag-mint);
+  --tag-blue-text: var(--tag-blue);
+  --tag-lilac-text: var(--tag-lilac);
+  --tag-coral-text: var(--tag-coral);
+  --tag-honey-text: var(--tag-honey);
 }
 
 /*

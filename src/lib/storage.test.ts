@@ -184,6 +184,35 @@ describe('타이머 — 멈출 수도 기록할 수도 없는 것은 버린다',
   })
 })
 
+describe('설정 — 한 항목이 비어도 나머지가 살아야 한다', () => {
+  it('테마가 없던 예전 데이터는 시스템으로', () => {
+    expect(parse({ settings: { accent: '#2b9a66', weekStart: 0, hour12: true } }).settings).toEqual({
+      accent: '#2b9a66',
+      theme: 'system',
+      weekStart: 0,
+      hour12: true,
+    })
+  })
+
+  it.each(['light', 'dark', 'system'] as const)('%s 는 그대로 지킨다', (theme) => {
+    expect(parse({ settings: { theme } }).settings.theme).toBe(theme)
+  })
+
+  it.each([['모르는 값', 'neon'], ['숫자', 1], ['null', null]])(
+    '%s 이면 시스템으로 떨어진다',
+    (_name, theme) => {
+      expect(parse({ settings: { theme } }).settings.theme).toBe('system')
+    },
+  )
+
+  it('설정이 통째로 없어도 기본값이 선다', () => {
+    const s = parse({}).settings
+    expect(s.theme).toBe('system')
+    expect(s.weekStart).toBe(1)
+    expect(typeof s.accent).toBe('string')
+  })
+})
+
 describe('백업 왕복 — 내보낸 그대로 돌아와야 한다', () => {
   it('모든 영역이 살아남는다', () => {
     const rich = raw({
@@ -193,7 +222,7 @@ describe('백업 왕복 — 내보낸 그대로 돌아와야 한다', () => {
       goals: [{ id: 'g1', title: '목표', status: 'active', tag: 'mint', order: 0, steps: [{ id: 's1', title: '단계', done: false }] }],
       mandals: [{ id: 'm1', title: '만다라트', core: '핵심', subGoals: Array(8).fill(''), actions: Array.from({ length: 8 }, () => Array(8).fill('')) }],
       mindmaps: [{ id: 'mm1', title: '맵', nodes: [{ id: 'r', text: '루트', order: 0 }] }],
-      settings: { accent: '#2b9a66', weekStart: 0, hour12: true },
+      settings: { accent: '#2b9a66', theme: 'dark', weekStart: 0, hour12: true },
     })
 
     // 내보내기가 하는 일 그대로
@@ -205,6 +234,6 @@ describe('백업 왕복 — 내보낸 그대로 돌아와야 한다', () => {
     expect(back.goals[0].steps).toHaveLength(1)
     expect(back.mandals[0].actions).toHaveLength(8)
     expect(back.mindmaps[0].nodes).toHaveLength(1)
-    expect(back.settings).toEqual({ accent: '#2b9a66', weekStart: 0, hour12: true })
+    expect(back.settings).toEqual({ accent: '#2b9a66', theme: 'dark', weekStart: 0, hour12: true })
   })
 })

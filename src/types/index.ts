@@ -157,9 +157,15 @@ export type ViewId =
   | 'study'
   | 'settings'
 
+/** 'system' 은 기기 설정을 따라갑니다 — 밤에 저절로 어두워집니다. */
+export type ThemeMode = 'light' | 'dark' | 'system'
+
+export const THEME_MODES: ThemeMode[] = ['light', 'dark', 'system']
+
 export interface Settings {
-  /** --accent 로 주입되는 HEX */
+  /** --accent-base 로 주입되는 HEX */
   accent: string
+  theme: ThemeMode
   /** 0 = 일요일 시작, 1 = 월요일 시작 */
   weekStart: 0 | 1
   hour12: boolean

@@ -130,10 +130,32 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
 
-  // 액센트 컬러를 CSS 변수로 주입합니다.
+  // 액센트 컬러를 CSS 변수로 주입합니다. --accent 는 테마가 이 값에서 계산합니다.
   useEffect(() => {
-    document.documentElement.style.setProperty('--accent', data.settings.accent)
+    document.documentElement.style.setProperty('--accent-base', data.settings.accent)
   }, [data.settings.accent])
+
+  /*
+   * 테마를 :root 의 data-theme 로 걸어 둡니다.
+   * 'system' 이면 기기 설정을 따라가되, 설정이 바뀌는 순간에도 따라가야 하므로
+   * 한 번 읽고 마는 것이 아니라 계속 듣습니다 — 밤에 저절로 어두워집니다.
+   */
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+
+    const apply = () => {
+      const dark = data.settings.theme === 'system' ? media.matches : data.settings.theme === 'dark'
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+      // 모바일 브라우저의 주소창까지 지면 색에 맞춥니다.
+      const meta = document.querySelector('meta[name="theme-color"]')
+      if (meta) meta.setAttribute('content', dark ? '#171614' : '#f6f5f1')
+    }
+
+    apply()
+    if (data.settings.theme !== 'system') return
+    media.addEventListener('change', apply)
+    return () => media.removeEventListener('change', apply)
+  }, [data.settings.theme])
 
   const selectDate = useMemo(
     () => (d: ISODate) => {

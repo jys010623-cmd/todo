@@ -1,6 +1,8 @@
 import { DEFAULT_SETTINGS } from '@/store/initial'
 import {
   TAG_COLORS,
+  THEME_MODES,
+  type ThemeMode,
   type Goal,
   type Mandal,
   type MandalAction,
@@ -70,6 +72,8 @@ function migrateSettings(raw: unknown): Settings {
 
   return {
     accent: LEGACY_ACCENTS.has(accent.toLowerCase()) ? DEFAULT_SETTINGS.accent : accent,
+    // 테마가 없던 시절 데이터도 있습니다.
+    theme: THEME_MODES.includes(s.theme as ThemeMode) ? (s.theme as ThemeMode) : DEFAULT_SETTINGS.theme,
     weekStart: s.weekStart === 0 || s.weekStart === 1 ? s.weekStart : DEFAULT_SETTINGS.weekStart,
     hour12: typeof s.hour12 === 'boolean' ? s.hour12 : DEFAULT_SETTINGS.hour12,
   }

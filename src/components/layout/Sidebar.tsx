@@ -10,6 +10,7 @@ import styles from './Sidebar.module.css'
  */
 const NAV: { id: ViewId; label: string; short: string }[] = [
   { id: 'home', label: 'Home', short: '홈' },
+  { id: 'search', label: 'Search', short: '검색' },
   { id: 'today', label: 'Today', short: '오늘' },
   { id: 'week', label: 'Week', short: '주간' },
   { id: 'month', label: 'Month', short: '월간' },

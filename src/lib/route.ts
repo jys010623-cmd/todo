@@ -10,6 +10,7 @@ import type { ISODate, ViewId } from '@/types'
 
 const VIEWS: ViewId[] = [
   'home',
+  'search',
   'today',
   'week',
   'month',

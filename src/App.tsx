@@ -6,6 +6,7 @@ import { HomeView } from '@/views/HomeView'
 import { MandalView } from '@/views/MandalView'
 import { MindMapView } from '@/views/MindMapView'
 import { MonthView } from '@/views/MonthView'
+import { SearchView } from '@/views/SearchView'
 import { SettingsView } from '@/views/SettingsView'
 import { StudyView } from '@/views/StudyView'
 import { TodayView } from '@/views/TodayView'
@@ -24,6 +25,9 @@ export function App() {
   switch (view) {
     case 'home':
       return <AppShell center={<HomeView />} />
+
+    case 'search':
+      return <AppShell center={<SearchView />} />
 
     case 'today':
       return <AppShell center={<TodayView />} />

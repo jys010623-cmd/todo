@@ -114,6 +114,17 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     lastView.current = view
   }, [view, selectedDate])
 
+  // 어디서 무엇을 하고 있든 찾기로 갑니다.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'k' || !(e.metaKey || e.ctrlKey)) return
+      e.preventDefault()
+      setView('search')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   // 뒤로·앞으로 가기 — 모바일에서 뒤로가기가 앱을 나가 버리지 않게 합니다.
   useEffect(() => {
     const onHashChange = () => {

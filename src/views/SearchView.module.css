@@ -1,0 +1,123 @@
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.body {
+  padding: 0 var(--s8) var(--s10);
+  max-width: 720px;
+}
+
+.input {
+  width: 100%;
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-card);
+  font-size: var(--fs-lg);
+  color: var(--text-1);
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.input:focus {
+  border-color: var(--accent);
+  /* 테두리가 이미 액센트라 기본 외곽선까지 겹치면 두 겹이 됩니다. */
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--text-4);
+}
+
+.hint {
+  margin-top: var(--s6);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-3);
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+  margin-top: var(--s8);
+}
+
+.groupTitle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--divider);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-3);
+}
+
+.groupCount {
+  color: var(--text-4);
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * 찾은 글과 어디에 있던 것인지를 한 줄에 둡니다.
+ * 좁아지면 아래로 접히도록 wrap 을 켜 둡니다 — 글을 자르는 것보다 낫습니다.
+ */
+.hit {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s3);
+  width: 100%;
+  padding: var(--s2) var(--s3);
+  margin: 0 calc(var(--s3) * -1);
+  border-radius: var(--r-sm);
+  text-align: left;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.hit:hover {
+  background: var(--hover);
+}
+
+.hitText {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-snug);
+  color: var(--text-1);
+  overflow-wrap: anywhere;
+}
+
+.hitContext {
+  flex: none;
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.more {
+  margin-top: var(--s2);
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+}
+
+@media (max-width: 1024px) {
+  .scroll {
+    flex: none;
+    overflow-y: visible;
+  }
+
+  .body {
+    padding: 0 var(--s6) var(--s8);
+  }
+}

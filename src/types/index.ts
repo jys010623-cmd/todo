@@ -148,6 +148,7 @@ export interface MindMap {
 
 export type ViewId =
   | 'home'
+  | 'search'
   | 'today'
   | 'week'
   | 'month'

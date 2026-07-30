@@ -10,13 +10,18 @@ import type { PlannerData } from '@/types'
 import styles from './SettingsView.module.css'
 
 /** 액센트 후보 — 태그 팔레트의 solid 값을 그대로 씁니다. 전부 지면 대비 3:1 이상입니다. */
+/**
+ * 어디서 본 듯한 값들로 골랐습니다 — 요즘 웹앱들이 공통으로 쓰는 자리입니다.
+ * 색 위의 글자색은 고정하지 않고 색마다 자동으로 고릅니다(readableOn).
+ * 전부 흰 글자에 맞추려 어둡게 내리면 초록·주황이 탁해집니다.
+ */
 const ACCENTS: { value: string; label: string }[] = [
-  { value: '#6d5ce7', label: '라일락' },
-  { value: '#2f6fed', label: '블루' },
-  { value: '#047857', label: '민트' },
-  { value: '#dc3520', label: '코랄' },
-  { value: '#b45c09', label: '허니' },
-  { value: '#1c1c1e', label: '잉크' },
+  { value: '#4f46e5', label: '인디고' },
+  { value: '#2563eb', label: '블루' },
+  { value: '#10b981', label: '에메랄드' },
+  { value: '#f43f5e', label: '로즈' },
+  { value: '#f59e0b', label: '앰버' },
+  { value: '#18181b', label: '잉크' },
 ]
 
 interface StepperProps {

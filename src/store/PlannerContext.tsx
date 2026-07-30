@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 
+import { readableOn } from '@/lib/color'
 import { isSameMonth, monthGrid, timeToMinutes, todayISO, weekDays } from '@/lib/date'
 import { expandEvents } from '@/lib/repeat'
 import { formatHash, parseHash } from '@/lib/route'
@@ -143,9 +144,15 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
 
-  // 액센트 컬러를 CSS 변수로 주입합니다. --accent 는 테마가 이 값에서 계산합니다.
+  /*
+   * 액센트를 CSS 변수로 주입합니다. --accent 는 테마가 이 값에서 계산합니다.
+   * 그 위에 얹을 글자색도 함께 넘깁니다 — 색마다 흰 글자가 맞을 때도, 먹 글자가
+   * 맞을 때도 있습니다(에메랄드·앰버는 먹). CSS 만으로는 밝기를 보고 고를 수 없습니다.
+   */
   useEffect(() => {
-    document.documentElement.style.setProperty('--accent-base', data.settings.accent)
+    const root = document.documentElement
+    root.style.setProperty('--accent-base', data.settings.accent)
+    root.style.setProperty('--accent-contrast-base', readableOn(data.settings.accent))
   }, [data.settings.accent])
 
   /*

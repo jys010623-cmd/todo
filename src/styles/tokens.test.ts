@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
+import { readableOn } from '@/lib/color'
+
 /**
  * 색 토큰의 대비를 지킵니다.
  *
@@ -49,8 +51,13 @@ function resolve(value: string, scope: Record<string, string>, depth = 0): RGB {
 
   if (v.startsWith('#')) return parseHex(v)
 
-  const varMatch = v.match(/^var\((--[\w-]+)\)$/)
-  if (varMatch) return resolve(scope[varMatch[1]] ?? light[varMatch[1]], scope, depth + 1)
+  // var(--x) 와 var(--x, 기본값) 둘 다 옵니다.
+  const varMatch = v.match(/^var\((--[\w-]+)(?:,\s*(.+))?\)$/)
+  if (varMatch) {
+    const found = scope[varMatch[1]] ?? light[varMatch[1]] ?? varMatch[2]
+    if (!found) throw new Error(`풀 수 없는 변수: ${v}`)
+    return resolve(found, scope, depth + 1)
+  }
 
   const mix = v.match(/^color-mix\(in srgb,\s*(.+?)\s+(\d+)%,\s*(.+?)\)$/)
   if (mix) {
@@ -90,7 +97,15 @@ describe.each([
   })
 
   it('액센트 위의 글자가 읽힌다', () => {
-    expect(contrast(at('--accent-contrast'), at('--accent'))).toBeGreaterThanOrEqual(4.5)
+    /*
+     * 밝은 테마의 글자색은 CSS 에 값이 없습니다 — 색마다 달라서 화면이 재서 넣습니다.
+     * CSS 의 기본값이 아니라 실제로 들어갈 값으로 확인해야 의미가 있습니다.
+     */
+    const token = scope['--accent-contrast'] ?? light['--accent-contrast']
+    const on = token.includes('--accent-contrast-base')
+      ? readableOn(light['--accent-base'])
+      : token
+    expect(contrast(resolve(on, scope), at('--accent'))).toBeGreaterThanOrEqual(4.5)
   })
 
   it('오늘 표식 안의 숫자가 읽힌다', () => {
@@ -114,10 +129,11 @@ describe.each([
 })
 
 describe('팔레트 자체', () => {
-  it('설정의 액센트 후보가 모두 흰 글자를 받쳐 준다', () => {
+  it('액센트 후보마다 고른 글자색이 읽힌다', () => {
     /*
      * 목록을 여기 베껴 두면 한쪽만 고쳤을 때 그냥 지나갑니다 — 화면 코드에서 읽습니다.
-     * 액센트 위에는 흰 글자가 얹히므로, 태그색보다 진해야 합니다.
+     * 흰 글자로 통일하지 않습니다. 그러려고 색을 어둡게 내리면 초록·주황이 탁해져,
+     * 색은 그대로 두고 글자색을 색마다 고릅니다.
      */
     const view = readFileSync(
       fileURLToPath(new URL('../views/SettingsView.tsx', import.meta.url)),
@@ -130,8 +146,14 @@ describe('팔레트 자체', () => {
 
     expect(accents.length).toBeGreaterThanOrEqual(5)
     for (const hex of accents) {
-      expect(contrast(parseHex(hex), parseHex('#ffffff'))).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(parseHex(hex), parseHex(readableOn(hex)))).toBeGreaterThanOrEqual(4.5)
     }
+  })
+
+  it('어두운 테마에서 밝아진 액센트도 먹 글자를 받쳐 준다', () => {
+    const accentBase = light['--accent-base']
+    const lightened = blend(parseHex(accentBase), parseHex('#ffffff'), 70)
+    expect(contrast(lightened, parseHex('#131316'))).toBeGreaterThanOrEqual(4.5)
   })
 
   it('지면은 순백이 아니다 — 흰 바탕에 괘선을 그으면 표 계산기처럼 읽힙니다', () => {

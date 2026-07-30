@@ -23,29 +23,30 @@
    * text-3 까지는 본문에 써도 WCAG AA(4.5:1)를 넘기고,
    * text-4 는 대비가 낮아 '읽지 않아도 되는 것'에만 씁니다.
    * 먹색의 노란기도 함께 뺐습니다 — 지면이 중성인데 글자만 누러면 바래 보입니다. */
-  --text-1: #1c1c1e; /* 15.8:1 */
-  --text-2: #56565a; /* 7.4:1 */
-  --text-3: #717176; /* 4.7:1 — 캡션 · 보조 정보 */
-  --text-4: #b0b0b4; /* 2.2:1 — 지난 달 날짜처럼 장식에 가까운 것 */
+  --text-1: #18181b; /* 16.9:1 */
+  --text-2: #52525b; /* 7.9:1 */
+  --text-3: #70707a; /* 4.8:1 — 캡션 · 보조 정보 */
+  --text-4: #a1a1aa; /* 2.6:1 — 지난 달 날짜처럼 장식에 가까운 것 */
 
   /* ── Accent ──────────────────────────────────────────
    * 설정에서 고른 색은 --accent-base 로 들어옵니다(:root 인라인).
    * 인라인 스타일은 규칙보다 세서, --accent 를 직접 주입하면 어두운 테마에서
    * 밝기를 손볼 수 없습니다. 한 겹 두고 여기서 계산합니다. */
-  --accent-base: #6d5ce7;
+  --accent-base: #4f46e5;
   --accent: var(--accent-base);
   /* accent 가 바뀌면 함께 따라오도록 계산합니다.
    * 흰색이 아니라 지면색에 섞어야 액센트 배경만 차갑게 뜨지 않습니다. */
   --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--surface));
   --accent-faint: color-mix(in srgb, var(--accent) 6%, transparent);
-  --accent-contrast: #ffffff;
+  /* 액센트 위의 글자색 — 색마다 흰/먹 중 읽히는 쪽을 화면이 재서 넣어 줍니다. */
+  --accent-contrast: var(--accent-contrast-base, #ffffff);
 
   /* 오늘 날짜 표식 — 지면에서 유일하게 꽉 찬 도형입니다. */
-  --today: #1c1c1e;
+  --today: #18181b;
   --today-contrast: #ffffff;
 
-  --hover: rgba(28, 28, 30, 0.04);
-  --press: rgba(28, 28, 30, 0.08);
+  --hover: rgba(24, 24, 27, 0.04);
+  --press: rgba(24, 24, 27, 0.08);
 
   /* ── Tag — 색마다 세 단계 ──────────────────────────────
    * solid : 점 · 막대 · 프로그레스 (배경 대비 3:1 이상)
@@ -55,15 +56,15 @@
    * 파스텔을 그대로 쓰면 글자가 읽히지 않아, 배경과 글자를
    * 분리했습니다. 이름은 그대로 두고 값만 갈아 끼웠습니다. */
   /*
-   * 선명한 색일수록 흰 지면에서는 대비가 떨어집니다.
-   * 초록·주황은 눈에 밝게 보여도 명도가 높아 3:1 을 못 넘겨, 채도는 살리고
-   * 명도만 한 단계 내렸습니다. 노랑 계열은 특히 한참 내려야 합니다.
+   * 태그는 점·막대로 쓰이므로 3:1 만 넘기면 됩니다(글자가 아닙니다).
+   * 액센트만큼 어둡게 내릴 이유가 없어, 알아보기 쉬운 값에 가깝게 둡니다.
+   * 초록·주황만 흰 지면에서 유난히 밝아 한 단계씩 내렸습니다.
    */
-  --tag-mint: #047857;
-  --tag-blue: #2f6fed;
-  --tag-lilac: #6d5ce7;
-  --tag-coral: #dc3520;
-  --tag-honey: #b45c09;
+  --tag-mint: #059669;
+  --tag-blue: #3b82f6;
+  --tag-lilac: #6366f1;
+  --tag-coral: #f43f5e;
+  --tag-honey: #d97706;
 
   /* soft 는 지면에 색을 한 방울 섞은 값입니다 — 흰색이 아니라 지면색에 섞어야
    * 칩만 따로 떠오르지 않고 같은 면에 얹힌 것처럼 보입니다. */
@@ -76,10 +77,10 @@
   /* solid 를 그대로 글자에 쓰면 옅은 색이 soft 위에서 안 읽힙니다.
    * 먹색을 섞어 4.5:1 을 넘기되, 색이 뭐였는지는 남깁니다. */
   --tag-mint-text: color-mix(in srgb, var(--tag-mint) 68%, var(--text-1));
-  --tag-blue-text: color-mix(in srgb, var(--tag-blue) 82%, var(--text-1));
-  --tag-lilac-text: color-mix(in srgb, var(--tag-lilac) 82%, var(--text-1));
-  --tag-coral-text: color-mix(in srgb, var(--tag-coral) 70%, var(--text-1));
-  --tag-honey-text: color-mix(in srgb, var(--tag-honey) 85%, var(--text-1));
+  --tag-blue-text: color-mix(in srgb, var(--tag-blue) 62%, var(--text-1));
+  --tag-lilac-text: color-mix(in srgb, var(--tag-lilac) 62%, var(--text-1));
+  --tag-coral-text: color-mix(in srgb, var(--tag-coral) 55%, var(--text-1));
+  --tag-honey-text: color-mix(in srgb, var(--tag-honey) 55%, var(--text-1));
 
   /* ── Typography — Pretendard ───────────────────────────
    * Pretendard Variable 을 CDN 에서 dynamic subset 으로 받습니다(index.html).
@@ -153,38 +154,39 @@
   /* 브라우저가 스크롤바·기본 폼을 어둡게 그리도록 */
   color-scheme: dark;
 
-  --bg: #131315;
-  --surface: #1a1a1d;
-  --surface-sunken: #232327;
-  --surface-card: #202024;
+  --bg: #131316;
+  --surface: #18181b;
+  --surface-sunken: #27272a;
+  --surface-card: #1f1f23;
 
-  --border: #303036;
-  --divider: #26262b;
+  --border: #33333a;
+  --divider: #27272a;
 
-  --text-1: #f0f0f2; /* 15.1:1 */
-  --text-2: #b0b0b6; /* 7.6:1 */
-  --text-3: #85858c; /* 4.6:1 */
-  --text-4: #56565c; /* 2.2:1 — 지난 달 날짜처럼 읽지 않아도 되는 것 */
+  --text-1: #f4f4f5; /* 16.0:1 */
+  --text-2: #b4b4bb; /* 8.0:1 */
+  --text-3: #8a8a93; /* 4.8:1 */
+  --text-4: #5b5b63; /* 2.3:1 — 지난 달 날짜처럼 읽지 않아도 되는 것 */
 
   /* 오늘 표식은 지면에서 유일하게 꽉 찬 도형 — 밝은 테마의 먹색 자리에 밝은 색이 옵니다. */
-  --today: #f0f0f2;
-  --today-contrast: #131315;
+  --today: #f4f4f5;
+  --today-contrast: #18181b;
 
-  --hover: rgba(240, 240, 242, 0.05);
-  --press: rgba(240, 240, 242, 0.1);
+  --hover: rgba(244, 244, 245, 0.05);
+  --press: rgba(244, 244, 245, 0.1);
 
   /* 고른 색을 그대로 쓰면 어두운 지면에서 가라앉습니다 — 흰색을 섞어 띄웁니다. */
-  --accent: color-mix(in srgb, var(--accent-base) 72%, #fff);
+  --accent: color-mix(in srgb, var(--accent-base) 70%, #fff);
   --accent-soft: color-mix(in srgb, var(--accent) 16%, var(--surface));
   --accent-faint: color-mix(in srgb, var(--accent) 12%, transparent);
-  --accent-contrast: #131315;
+  /* 여기서는 액센트가 늘 밝은 쪽이라 글자는 먹으로 고정입니다. */
+  --accent-contrast: #131316;
 
   /* 태그도 밝은 쪽으로 올립니다. 어두운 지면에서 원래 값은 형태가 안 보입니다. */
   --tag-mint: #34d399;
-  --tag-blue: #7aa2ff;
-  --tag-lilac: #a595ff;
-  --tag-coral: #ff8a72;
-  --tag-honey: #f5b942;
+  --tag-blue: #60a5fa;
+  --tag-lilac: #a5b4fc;
+  --tag-coral: #fb7185;
+  --tag-honey: #fbbf24;
 
   --tag-mint-soft: color-mix(in srgb, var(--tag-mint) 15%, var(--surface));
   --tag-blue-soft: color-mix(in srgb, var(--tag-blue) 15%, var(--surface));

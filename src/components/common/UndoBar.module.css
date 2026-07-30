@@ -81,6 +81,8 @@
   .bar {
     left: var(--s4);
     right: var(--s4);
+    /* 아래 고정된 메뉴 위로 올립니다. */
+    bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom, 0px) + var(--s3));
     transform: none;
     animation: none;
   }

@@ -77,25 +77,29 @@
   .shell,
   .shell[data-single] {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto;
+    /* 아래 고정된 메뉴에 본문 끝이 가리지 않게 */
+    padding-bottom: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom, 0px));
   }
 
-  /* 메뉴는 가로 막대가 되어 위에 붙어 따라옵니다. */
+  /*
+   * 메뉴는 아래에 고정됩니다. 흐름에서 빠지므로 격자는 본문 두 행만 남습니다.
+   */
   .shell > nav {
-    grid-column: 1;
-    grid-row: 1;
-    position: sticky;
-    top: 0;
-    z-index: 2;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
   }
 
   .center {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 1;
   }
 
   .right {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 2;
   }
 }

@@ -152,3 +152,25 @@
     display: none;
   }
 }
+
+/*
+ * 한 칸이 50px 도 안 되면 제목은 두 글자에서 잘려 '일…' 만 남습니다.
+ * 읽히지 않는 글자 대신, 무엇이 있다는 것만 색점으로 알립니다.
+ */
+@media (max-width: 768px) {
+  .events {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 4px;
+  }
+
+  .eventTitle {
+    display: none;
+  }
+
+  .tagBar {
+    width: 5px;
+    height: 5px;
+  }
+}

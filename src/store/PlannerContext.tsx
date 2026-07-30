@@ -11,6 +11,7 @@ import {
 } from 'react'
 
 import { isSameMonth, timeToMinutes, todayISO } from '@/lib/date'
+import { formatHash, parseHash } from '@/lib/route'
 import { loadData, saveData } from '@/lib/storage'
 import type { ISODate, PlanEvent, PlannerData, Subject, Todo, ViewId } from '@/types'
 import { createInitialData } from './initial'
@@ -84,9 +85,11 @@ function init(): PlannerData {
 export function PlannerProvider({ children }: { children: ReactNode }) {
   const [data, rawDispatch] = useReducer(reducer, undefined, init)
 
-  const [view, setView] = useState<ViewId>('month')
-  const [selectedDate, setSelectedDate] = useState<ISODate>(todayISO)
-  const [cursorMonth, setCursorMonth] = useState<ISODate>(todayISO)
+  // 처음 열 때는 주소가 먼저입니다 — 북마크나 새로고침으로 들어와도 그 화면이 나와야 합니다.
+  const initial = parseHash(window.location.hash)
+  const [view, setView] = useState<ViewId>(initial?.view ?? 'month')
+  const [selectedDate, setSelectedDate] = useState<ISODate>(initial?.date ?? todayISO)
+  const [cursorMonth, setCursorMonth] = useState<ISODate>(initial?.date ?? todayISO)
 
   // 저장은 debounce 300ms — 타이핑 중 매 글자 저장을 피합니다.
   const saveTimer = useRef<number | undefined>(undefined)
@@ -95,6 +98,37 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     saveTimer.current = window.setTimeout(() => saveData(data), 300)
     return () => window.clearTimeout(saveTimer.current)
   }, [data])
+
+  /*
+   * 화면이 바뀌면 주소도 따라갑니다.
+   *
+   * 화면을 옮길 때는 기록을 쌓고(push), 같은 화면에서 날짜만 바꿀 때는 덮어씁니다
+   * (replace). 날짜마다 기록을 쌓으면 뒤로가기를 열 번 눌러야 앞 화면으로 돌아갑니다.
+   */
+  const lastView = useRef(view)
+  useEffect(() => {
+    const next = formatHash(view, selectedDate)
+    if (window.location.hash === next) return
+    if (lastView.current === view) window.history.replaceState(null, '', next)
+    else window.history.pushState(null, '', next)
+    lastView.current = view
+  }, [view, selectedDate])
+
+  // 뒤로·앞으로 가기 — 모바일에서 뒤로가기가 앱을 나가 버리지 않게 합니다.
+  useEffect(() => {
+    const onHashChange = () => {
+      const route = parseHash(window.location.hash)
+      if (!route) return
+      lastView.current = route.view
+      setView(route.view)
+      if (route.date) {
+        setSelectedDate(route.date)
+        setCursorMonth((prev) => (isSameMonth(prev, route.date as ISODate) ? prev : route.date!))
+      }
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
 
   // 액센트 컬러를 CSS 변수로 주입합니다.
   useEffect(() => {

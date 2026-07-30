@@ -5,7 +5,7 @@ import { ProgressBar } from '@/components/common/ProgressBar'
 import { SectionHeader } from '@/components/common/SectionHeader'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { formatDateLong, formatDateShort, formatMinutes, formatTime, todayISO } from '@/lib/date'
-import { eventToInput, inputToEventPatch, nextTag, parseTimePrefix } from '@/lib/entry'
+import { eventToInput, inputToEventPatch, inputToNewEvent, nextTag } from '@/lib/entry'
 import { tagVar } from '@/lib/tag'
 import { usePlanner } from '@/store/PlannerContext'
 import styles from './TodayView.module.css'
@@ -65,8 +65,8 @@ export function TodayView() {
                         onCommit={(next) =>
                           dispatch({
                             type: 'UPDATE_EVENT',
-                            id: e.id,
-                            patch: inputToEventPatch(next),
+                            id: e.sourceId,
+                            patch: inputToEventPatch(next, e.repeat),
                           })
                         }
                       />
@@ -79,8 +79,14 @@ export function TodayView() {
                     <button
                       type="button"
                       className={styles.remove}
-                      aria-label={`${e.title} 일정 삭제`}
-                      onClick={() => dispatch({ type: 'DELETE_EVENT', id: e.id })}
+                      aria-label={
+                        e.virtual ? `${e.title} 이 날만 건너뛰기` : `${e.title} 일정 삭제`
+                      }
+                      onClick={() =>
+                        e.virtual
+                          ? dispatch({ type: 'SKIP_OCCURRENCE', id: e.sourceId, date: e.date })
+                          : dispatch({ type: 'DELETE_EVENT', id: e.sourceId })
+                      }
                     >
                       ×
                     </button>
@@ -93,14 +99,15 @@ export function TodayView() {
 
             <InlineAdd
               label="일정 추가"
-              placeholder="10:00 팀 회의"
+              placeholder="10:00 팀 회의 매주"
               onSubmit={(value) => {
-                const { start, title } = parseTimePrefix(value)
+                const { start, title, repeat } = inputToNewEvent(value)
                 dispatch({
                   type: 'ADD_EVENT',
                   date: today,
                   title,
                   start,
+                  repeat,
                   tag: nextTag(events.length),
                 })
               }}

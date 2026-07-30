@@ -1,7 +1,10 @@
 import { DEFAULT_SETTINGS } from '@/store/initial'
 import {
+  REPEAT_FREQS,
   TAG_COLORS,
   THEME_MODES,
+  type Repeat,
+  type RepeatFreq,
   type ThemeMode,
   type Goal,
   type Mandal,
@@ -166,6 +169,21 @@ function migrateMindMap(raw: unknown): MindMap {
 }
 
 /**
+ * 모르는 주기가 들어오면 펼치는 쪽에서 아무 날도 안 맞아, 일정이 통째로 사라진 것처럼
+ * 보입니다. 규칙을 못 알아보면 반복을 버리고 그 날 하루짜리로 남깁니다.
+ */
+function migrateRepeat(raw: unknown): Repeat | undefined {
+  const r = (raw ?? undefined) as Partial<Repeat> | undefined
+  if (!r || typeof r !== 'object') return undefined
+  if (!REPEAT_FREQS.includes(r.freq as RepeatFreq)) return undefined
+
+  const skip = asArray<unknown>(r.skip).filter(
+    (d): d is string => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d),
+  )
+  return { freq: r.freq as RepeatFreq, skip: skip.length > 0 ? skip : undefined }
+}
+
+/**
  * 길이가 0 이하이면 타이머가 켜자마자 끝나 무한히 넘어갑니다.
  * 지나치게 길어도 쓸모가 없어 위아래를 막아 둡니다.
  */
@@ -243,6 +261,7 @@ export function parseData(raw: unknown): PlannerData | null {
       events: asArray<PlannerData['events'][number]>(parsed.events).map((e) => ({
         ...e,
         tag: migrateTag(e.tag),
+        repeat: migrateRepeat(e.repeat),
       })),
       todos: asArray(parsed.todos),
       subjects,

@@ -184,6 +184,40 @@ describe('타이머 — 멈출 수도 기록할 수도 없는 것은 버린다',
   })
 })
 
+describe('반복 규칙 — 못 알아보면 그 날 하루짜리로', () => {
+  const withRepeat = (repeat: unknown) =>
+    parse({ events: [{ id: 'e', date: '2026-07-30', title: '회의', tag: 'blue', repeat }] }).events[0]
+
+  it('멀쩡한 규칙은 그대로', () => {
+    expect(withRepeat({ freq: 'weekly' }).repeat).toEqual({ freq: 'weekly', skip: undefined })
+  })
+
+  it('건너뛴 날을 지킨다', () => {
+    expect(withRepeat({ freq: 'daily', skip: ['2026-08-01'] }).repeat).toEqual({
+      freq: 'daily',
+      skip: ['2026-08-01'],
+    })
+  })
+
+  it.each([
+    ['모르는 주기', { freq: 'hourly' }],
+    ['주기 없음', {}],
+    ['객체 아님', 'weekly'],
+    ['null', null],
+  ])('%s 이면 반복을 버린다 — 아무 날도 안 맞아 통째로 사라진 것처럼 보입니다', (_n, repeat) => {
+    const e = withRepeat(repeat)
+    expect(e.repeat).toBeUndefined()
+    expect(e.title).toBe('회의') // 일정 자체는 남습니다
+  })
+
+  it('날짜 꼴이 아닌 건너뛰기는 걸러 낸다', () => {
+    expect(withRepeat({ freq: 'daily', skip: ['2026-08-01', '어제', 42, null] }).repeat).toEqual({
+      freq: 'daily',
+      skip: ['2026-08-01'],
+    })
+  })
+})
+
 describe('설정 — 한 항목이 비어도 나머지가 살아야 한다', () => {
   it('테마가 없던 예전 데이터는 시스템으로', () => {
     expect(parse({ settings: { accent: '#2b9a66', weekStart: 0, hour12: true } }).settings).toEqual({

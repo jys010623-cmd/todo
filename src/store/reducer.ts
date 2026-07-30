@@ -8,6 +8,7 @@ import type {
   MindNode,
   PlanEvent,
   PlannerData,
+  Repeat,
   Settings,
   Subject,
   TagColor,
@@ -64,7 +65,17 @@ function emptyMindMap(title: string): MindMap {
 }
 
 export type Action =
-  | { type: 'ADD_EVENT'; date: ISODate; title: string; start?: string; end?: string; tag: TagColor }
+  | {
+      type: 'ADD_EVENT'
+      date: ISODate
+      title: string
+      start?: string
+      end?: string
+      tag: TagColor
+      repeat?: Repeat
+    }
+  /** 반복 중 그 날 하루만 빼 둡니다. 나머지 날은 그대로 옵니다. */
+  | { type: 'SKIP_OCCURRENCE'; id: string; date: ISODate }
   | { type: 'UPDATE_EVENT'; id: string; patch: Partial<PlanEvent> }
   | { type: 'DELETE_EVENT'; id: string }
   | { type: 'ADD_TODO'; date: ISODate; title: string }
@@ -159,9 +170,20 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
         start: action.start,
         end: action.end,
         tag: action.tag,
+        repeat: action.repeat,
       }
       return { ...state, events: [...state.events, event] }
     }
+
+    case 'SKIP_OCCURRENCE':
+      return {
+        ...state,
+        events: state.events.map((e) => {
+          if (e.id !== action.id || !e.repeat) return e
+          if (e.repeat.skip?.includes(action.date)) return e
+          return { ...e, repeat: { ...e.repeat, skip: [...(e.repeat.skip ?? []), action.date] } }
+        }),
+      }
 
     case 'UPDATE_EVENT':
       return {

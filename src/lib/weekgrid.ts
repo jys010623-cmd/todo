@@ -18,8 +18,8 @@ const DEFAULT_MIN = 60
 /** 아무리 짧아도 제목 한 줄은 보이게 합니다. */
 const MIN_MIN = 24
 
-export interface TimedSlot {
-  event: PlanEvent
+export interface TimedSlot<E extends PlanEvent = PlanEvent> {
+  event: E
   /** 격자 위에서의 위치(px) */
   top: number
   height: number
@@ -48,7 +48,7 @@ export function isTimed(e: PlanEvent): boolean {
  * 겹치는 것들은 한 묶음으로 보고 폭을 나눠 갖습니다. 겹칠 때 하나가 다른 하나를
  * 완전히 덮어 버리면 뒤엣것은 있는지조차 알 수 없습니다.
  */
-export function layoutDay(events: PlanEvent[]): TimedSlot[] {
+export function layoutDay<E extends PlanEvent>(events: E[]): TimedSlot<E>[] {
   const items = events
     .map((event) => {
       const start = minutesOf(event.start)
@@ -59,10 +59,10 @@ export function layoutDay(events: PlanEvent[]): TimedSlot[] {
         rawEnd !== null && rawEnd > start ? rawEnd : Math.min(start + DEFAULT_MIN, DAY_MINUTES)
       return { event, start, end: Math.max(end, start + MIN_MIN) }
     })
-    .filter((x): x is { event: PlanEvent; start: number; end: number } => x !== null)
+    .filter((x): x is { event: E; start: number; end: number } => x !== null)
     .sort((a, b) => (a.start === b.start ? a.end - b.end : a.start - b.start))
 
-  const slots: TimedSlot[] = []
+  const slots: TimedSlot<E>[] = []
 
   let cluster: typeof items = []
   /** 묶음 안에서 각 칸이 언제까지 차 있는지 */

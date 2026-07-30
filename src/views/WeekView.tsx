@@ -15,6 +15,7 @@ import {
   weekdayLabel,
 } from '@/lib/date'
 import { eventToInput, inputToEventPatch, nextTag } from '@/lib/entry'
+import { parseRepeatSuffix } from '@/lib/repeat'
 import { tagSoftVar, tagTextVar, tagVar } from '@/lib/tag'
 import {
   HOUR_H,
@@ -108,11 +109,14 @@ export function WeekView() {
     const title = draft.trim()
     if (composing && title) {
       const dayEvents = eventsByDate.get(composing.date) ?? []
+      // 시간은 누른 자리가 정하므로, 적은 글에서는 반복만 읽습니다.
+      const { title: plain, freq } = parseRepeatSuffix(title)
       dispatch({
         type: 'ADD_EVENT',
         date: composing.date,
-        title,
+        title: plain,
         start: timeAt(composing.minutes),
+        repeat: freq ? { freq } : undefined,
         tag: nextTag(dayEvents.length),
       })
     }
@@ -211,19 +215,29 @@ export function WeekView() {
                   >
                     <span className={styles.chipBar} style={{ background: tagVar(e.tag) }} />
                     <InlineEdit
-                      value={e.title}
+                      value={e.repeat ? `${e.title} ↻` : e.title}
                       editValue={eventToInput(e)}
                       label={e.title}
                       className={styles.chipTitle}
                       onCommit={(next) =>
-                        dispatch({ type: 'UPDATE_EVENT', id: e.id, patch: inputToEventPatch(next) })
+                        dispatch({
+                          type: 'UPDATE_EVENT',
+                          id: e.sourceId,
+                          patch: inputToEventPatch(next, e.repeat),
+                        })
                       }
                     />
                     <button
                       type="button"
                       className={styles.remove}
-                      aria-label={`${e.title} 일정 삭제`}
-                      onClick={() => dispatch({ type: 'DELETE_EVENT', id: e.id })}
+                      aria-label={
+                        e.virtual ? `${e.title} 이 날만 건너뛰기` : `${e.title} 일정 삭제`
+                      }
+                      onClick={() =>
+                        e.virtual
+                          ? dispatch({ type: 'SKIP_OCCURRENCE', id: e.sourceId, date: e.date })
+                          : dispatch({ type: 'DELETE_EVENT', id: e.sourceId })
+                      }
                     >
                       ×
                     </button>
@@ -279,10 +293,21 @@ export function WeekView() {
                */
               let timed = (eventsByDate.get(date) ?? []).filter(isTimed)
               if (dragging) {
-                timed = timed.filter((e) => e.id !== dragging.id)
+                timed = timed.filter((e) => e.sourceId !== dragging.id)
                 if (dragging.date === date) {
                   const source = data.events.find((e) => e.id === dragging.id)
-                  if (source) timed = [...timed, { ...source, start: dragging.start, end: dragging.end }]
+                  if (source) {
+                    timed = [
+                      ...timed,
+                      {
+                        ...source,
+                        start: dragging.start,
+                        end: dragging.end,
+                        sourceId: source.id,
+                        virtual: false,
+                      },
+                    ]
+                  }
                 }
               }
               const slots = layoutDay(timed)
@@ -343,11 +368,19 @@ export function WeekView() {
                       onCommit={(next) =>
                         dispatch({
                           type: 'UPDATE_EVENT',
-                          id: slot.event.id,
-                          patch: inputToEventPatch(next),
+                          id: slot.event.sourceId,
+                          patch: inputToEventPatch(next, slot.event.repeat),
                         })
                       }
-                      onDelete={() => dispatch({ type: 'DELETE_EVENT', id: slot.event.id })}
+                      onDelete={() =>
+                        slot.event.virtual
+                          ? dispatch({
+                              type: 'SKIP_OCCURRENCE',
+                              id: slot.event.sourceId,
+                              date: slot.event.date,
+                            })
+                          : dispatch({ type: 'DELETE_EVENT', id: slot.event.sourceId })
+                      }
                     />
                   ))}
 
@@ -472,6 +505,8 @@ function EventBlock({ slot, hour12, dragging, onDrag, onDragEnd, onCommit, onDel
       <span className={styles.blockTime}>
         {formatTime(event.start, hour12)}
         {event.end ? ` – ${formatTime(event.end, hour12)}` : ''}
+        {/* 반복인 줄 모르면 하나 지웠다가 다음 주에 또 나와 당황합니다. */}
+        {event.repeat && <span className={styles.repeat}> ↻</span>}
       </span>
       <InlineEdit
         value={event.title}

@@ -8,6 +8,20 @@ export type TagColor = 'mint' | 'blue' | 'lilac' | 'coral' | 'honey'
 
 export const TAG_COLORS: TagColor[] = ['mint', 'blue', 'lilac', 'coral', 'honey']
 
+export type RepeatFreq = 'daily' | 'weekly' | 'monthly'
+
+export const REPEAT_FREQS: RepeatFreq[] = ['daily', 'weekly', 'monthly']
+
+/**
+ * 반복은 규칙만 저장하고 화면에 그릴 때 펼칩니다.
+ * 미리 만들어 두면 '매주' 하나가 수백 개가 되고, 나중에 시간을 바꾸면 그걸 다 찾아야 합니다.
+ */
+export interface Repeat {
+  freq: RepeatFreq
+  /** 그날 하루만 건너뛴 날짜들 */
+  skip?: ISODate[]
+}
+
 export interface PlanEvent {
   id: string
   date: ISODate
@@ -15,6 +29,17 @@ export interface PlanEvent {
   end?: Time
   title: string
   tag: TagColor
+  repeat?: Repeat
+}
+
+/**
+ * 화면에 그리는 일정.
+ * 반복에서 펼쳐진 것은 자기 id 가 따로 있고(목록 key 용), sourceId 가 원본을 가리킵니다.
+ */
+export interface EventOccurrence extends PlanEvent {
+  sourceId: string
+  /** 저장된 것이 아니라 규칙에서 펼쳐 나온 것인지 */
+  virtual: boolean
 }
 
 export interface Todo {

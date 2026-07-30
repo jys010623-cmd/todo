@@ -3,7 +3,7 @@ import { InlineAdd } from '@/components/common/InlineAdd'
 import { SectionHeader } from '@/components/common/SectionHeader'
 import { InlineEdit } from '@/components/common/InlineEdit'
 import { formatDateLong, formatTime, todayISO } from '@/lib/date'
-import { eventToInput, inputToEventPatch, nextTag, parseTimePrefix } from '@/lib/entry'
+import { eventToInput, inputToEventPatch, inputToNewEvent, nextTag } from '@/lib/entry'
 import { tagVar } from '@/lib/tag'
 import { usePlanner } from '@/store/PlannerContext'
 import styles from './PlannerPanel.module.css'
@@ -39,7 +39,11 @@ export function PlannerPanel() {
                     label={e.title}
                     className={styles.rowTitle}
                     onCommit={(next) =>
-                      dispatch({ type: 'UPDATE_EVENT', id: e.id, patch: inputToEventPatch(next) })
+                      dispatch({
+                        type: 'UPDATE_EVENT',
+                        id: e.sourceId,
+                        patch: inputToEventPatch(next, e.repeat),
+                      })
                     }
                   />
                   {e.start && (
@@ -52,8 +56,15 @@ export function PlannerPanel() {
                 <button
                   type="button"
                   className={styles.remove}
-                  aria-label={`${e.title} 일정 삭제`}
-                  onClick={() => dispatch({ type: 'DELETE_EVENT', id: e.id })}
+                  aria-label={
+                    e.virtual ? `${e.title} 이 날만 건너뛰기` : `${e.title} 일정 삭제`
+                  }
+                  onClick={() =>
+                    // 반복에서 펼쳐진 것은 그 날만 뺍니다. 전체를 지우려면 처음 적은 날에서.
+                    e.virtual
+                      ? dispatch({ type: 'SKIP_OCCURRENCE', id: e.sourceId, date: e.date })
+                      : dispatch({ type: 'DELETE_EVENT', id: e.sourceId })
+                  }
                 >
                   ×
                 </button>
@@ -64,14 +75,15 @@ export function PlannerPanel() {
 
         <InlineAdd
           label="일정 추가"
-          placeholder="10:00 팀 회의"
+          placeholder="10:00 팀 회의 매주"
           onSubmit={(value) => {
-            const { start, title } = parseTimePrefix(value)
+            const { start, title, repeat } = inputToNewEvent(value)
             dispatch({
               type: 'ADD_EVENT',
               date: selectedDate,
               title,
               start,
+              repeat,
               tag: nextTag(events.length),
             })
           }}

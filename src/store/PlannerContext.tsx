@@ -10,10 +10,11 @@ import {
   type ReactNode,
 } from 'react'
 
-import { isSameMonth, timeToMinutes, todayISO } from '@/lib/date'
+import { isSameMonth, monthGrid, timeToMinutes, todayISO, weekDays } from '@/lib/date'
+import { expandEvents } from '@/lib/repeat'
 import { formatHash, parseHash } from '@/lib/route'
 import { loadData, saveData } from '@/lib/storage'
-import type { ISODate, PlanEvent, PlannerData, Subject, Todo, ViewId } from '@/types'
+import type { EventOccurrence, ISODate, PlannerData, Subject, Todo, ViewId } from '@/types'
 import { createInitialData } from './initial'
 import { reducer, type Action } from './reducer'
 
@@ -62,7 +63,8 @@ interface PlannerContextValue {
   cursorMonth: ISODate
   setCursorMonth: (d: ISODate) => void
 
-  eventsByDate: Map<ISODate, PlanEvent[]>
+  /** 반복이 펼쳐진 뒤의 모습 — 지우거나 고칠 때는 sourceId 를 씁니다. */
+  eventsByDate: Map<ISODate, EventOccurrence[]>
   todosByDate: Map<ISODate, Todo[]>
   studyMinutesByDate: Map<ISODate, number>
   subjectById: Map<string, Subject>
@@ -217,9 +219,24 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const { dispatch, undo, dismissUndo } = helpers
   useEffect(() => helpers.clearTimer, [helpers])
 
+  /**
+   * 반복은 규칙만 저장돼 있어 그릴 때 펼쳐야 합니다.
+   * 끝없이 반복되는 것을 다 만들 수는 없으니, 지금 화면이 그릴 날짜만 물어봅니다 —
+   * 이번 달 격자, 선택한 주, 그리고 오늘.
+   */
+  const visibleDates = useMemo(() => {
+    const dates = new Set<ISODate>([
+      ...monthGrid(cursorMonth, data.settings.weekStart),
+      ...weekDays(selectedDate, data.settings.weekStart),
+      selectedDate,
+      todayISO(),
+    ])
+    return dates
+  }, [cursorMonth, selectedDate, data.settings.weekStart])
+
   const eventsByDate = useMemo(() => {
-    const map = new Map<ISODate, PlanEvent[]>()
-    for (const e of data.events) {
+    const map = new Map<ISODate, EventOccurrence[]>()
+    for (const e of expandEvents(data.events, visibleDates)) {
       const list = map.get(e.date)
       if (list) list.push(e)
       else map.set(e.date, [e])
@@ -234,7 +251,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       })
     }
     return map
-  }, [data.events])
+  }, [data.events, visibleDates])
 
   const todosByDate = useMemo(() => {
     const map = new Map<ISODate, Todo[]>()

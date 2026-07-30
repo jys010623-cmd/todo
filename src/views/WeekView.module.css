@@ -324,6 +324,10 @@
   overflow: hidden;
 }
 
+.repeat {
+  opacity: 0.7;
+}
+
 .blockTitle,
 .chipTitle {
   display: block;

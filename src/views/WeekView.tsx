@@ -240,8 +240,7 @@ export function WeekView() {
             <div className={styles.gutter}>
               {HOURS.map((h) => (
                 <div key={h} className={styles.hourLabel}>
-                  {/* 자정 라벨은 격자 위로 삐져나가 읽히지 않습니다. */}
-                  {h > 0 && <span>{formatTime(`${String(h).padStart(2, '0')}:00`, hour12)}</span>}
+                  {formatTime(`${String(h).padStart(2, '0')}:00`, hour12)}
                 </div>
               ))}
             </div>

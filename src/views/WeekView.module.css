@@ -75,6 +75,12 @@
   top: 0;
   z-index: 4;
   background: var(--surface);
+  /*
+   * 경계선을 border 로 그으면 바로 아래 눈금선과 맞닿아 2px 처럼 보입니다
+   * (처음 열면 07:00 선이 정확히 여기에 옵니다).
+   * 그림자는 자리를 차지하지 않고 sticky 와 함께 위에 그려져, 겹친 눈금선을 덮습니다.
+   */
+  box-shadow: 0 1px 0 var(--border);
 }
 
 /* 시간 눈금 자리 + 7일 — 세 줄이 같은 열을 씁니다. */
@@ -147,9 +153,10 @@
 /*
  * 자기 스크롤을 두지 않습니다 — 여기서 스크롤바가 생기면 이 줄만 좁아져
  * 머리·격자와 세로선이 어긋납니다. 종일 항목은 보통 몇 개뿐입니다.
+ * 아래 경계선은 .sticky 의 그림자가 맡습니다.
  */
 .allDay {
-  border-bottom: 1px solid var(--border);
+  padding-bottom: 1px;
 }
 
 .gutterLabel {
@@ -181,15 +188,19 @@
   position: relative;
 }
 
+/*
+ * 글자를 선 위로 끌어올리지 않습니다.
+ * 반 줄만 올려도 맨 위 라벨이 종일 줄 경계선을 파고들어 겹쳐 보입니다.
+ * 자기 칸 맨 위에 두면 '이 칸이 몇 시' 로 그대로 읽힙니다.
+ */
 .hourLabel {
   height: var(--hour-h);
-  padding-right: var(--s2);
+  padding: 3px var(--s2) 0 0;
   font-size: var(--fs-cap);
+  line-height: 1;
   color: var(--text-3);
   text-align: right;
   font-variant-numeric: tabular-nums;
-  /* 눈금선과 글자의 가운데를 맞춥니다 — 선은 칸의 위쪽에 있습니다. */
-  transform: translateY(-0.5em);
 }
 
 .column {

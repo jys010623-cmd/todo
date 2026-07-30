@@ -21,6 +21,9 @@ import {
   isTimed,
   layoutDay,
   minutesAt,
+  movedTimes,
+  resizedEnd,
+  snapDelta,
   timeAt,
   type TimedSlot,
 } from '@/lib/weekgrid'
@@ -39,6 +42,18 @@ export function WeekView() {
   const { weekStart, hour12 } = data.settings
   const days = useMemo(() => weekDays(selectedDate, weekStart), [selectedDate, weekStart])
   const inThisWeek = days.includes(today)
+
+  /**
+   * 끄는 동안의 모습. 매 움직임마다 dispatch 하면 저장까지 따라와 판이 버벅입니다.
+   * 손을 뗄 때 한 번만 넘기고, 그전까지는 여기서 그립니다.
+   */
+  const [dragging, setDragging] = useState<{
+    id: string
+    kind: 'move' | 'resize'
+    date: string
+    start: string
+    end?: string
+  } | null>(null)
 
   /** 격자에서 누른 자리 — 여기에 입력창이 뜹니다. */
   const [composing, setComposing] = useState<{ date: string; minutes: number } | null>(null)
@@ -76,6 +91,18 @@ export function WeekView() {
     return () => window.clearInterval(timer)
   }, [])
   const nowMinutes = now.getHours() * 60 + now.getMinutes()
+
+  /**
+   * 손이 가로로 어느 날 위에 있는지.
+   * 일곱 열은 폭이 같고 서로 붙어 있으므로, 첫 열 하나만 재면 나머지가 따라옵니다.
+   */
+  const firstColumnRef = useRef<HTMLDivElement>(null)
+  const dayUnder = (clientX: number): string | undefined => {
+    const box = firstColumnRef.current?.getBoundingClientRect()
+    if (!box || box.width === 0) return undefined
+    const index = Math.floor((clientX - box.left) / box.width)
+    return days[Math.min(Math.max(index, 0), days.length - 1)]
+  }
 
   const commit = () => {
     const title = draft.trim()
@@ -246,7 +273,18 @@ export function WeekView() {
             </div>
 
             {days.map((date) => {
-              const timed = (eventsByDate.get(date) ?? []).filter(isTimed)
+              /*
+               * 끄는 중인 일정은 살아 있는 값으로 갈아 끼워 배치에 넘깁니다.
+               * 날짜를 건너뛰는 중이면 원래 날에서는 빼고 새 날에 얹습니다.
+               */
+              let timed = (eventsByDate.get(date) ?? []).filter(isTimed)
+              if (dragging) {
+                timed = timed.filter((e) => e.id !== dragging.id)
+                if (dragging.date === date) {
+                  const source = data.events.find((e) => e.id === dragging.id)
+                  if (source) timed = [...timed, { ...source, start: dragging.start, end: dragging.end }]
+                }
+              }
               const slots = layoutDay(timed)
               const composingHere = composing?.date === date
 
@@ -255,6 +293,7 @@ export function WeekView() {
                   key={date}
                   className={styles.column}
                   data-selected={date === selectedDate || undefined}
+                  ref={date === days[0] ? firstColumnRef : undefined}
                   onClick={(e) => {
                     // 일정 위를 누른 것은 그 일정의 몫입니다.
                     if ((e.target as HTMLElement).closest('[data-event]')) return
@@ -281,6 +320,26 @@ export function WeekView() {
                       key={slot.event.id}
                       slot={slot}
                       hour12={hour12}
+                      dragging={dragging?.id === slot.event.id}
+                      onDrag={(kind, dy, clientX) => {
+                        const e = slot.event
+                        const delta = snapDelta(dy)
+                        if (kind === 'resize') {
+                          setDragging({ id: e.id, kind, date, start: e.start as string, end: resizedEnd(e.start as string, e.end, delta) })
+                          return
+                        }
+                        const moved = movedTimes(e.start as string, e.end, delta)
+                        setDragging({ id: e.id, kind, date: dayUnder(clientX) ?? date, ...moved })
+                      }}
+                      onDragEnd={() => {
+                        if (!dragging) return
+                        dispatch({
+                          type: 'UPDATE_EVENT',
+                          id: dragging.id,
+                          patch: { date: dragging.date, start: dragging.start, end: dragging.end },
+                        })
+                        setDragging(null)
+                      }}
                       onCommit={(next) =>
                         dispatch({
                           type: 'UPDATE_EVENT',
@@ -332,19 +391,74 @@ export function WeekView() {
 interface BlockProps {
   slot: TimedSlot
   hour12: boolean
+  dragging: boolean
+  onDrag: (kind: 'move' | 'resize', dy: number, clientX: number) => void
+  onDragEnd: () => void
   onCommit: (next: string) => void
   onDelete: () => void
 }
 
-function EventBlock({ slot, hour12, onCommit, onDelete }: BlockProps) {
+function EventBlock({ slot, hour12, dragging, onDrag, onDragEnd, onCommit, onDelete }: BlockProps) {
   const { event, top, height, column, columns } = slot
   const width = 100 / columns
+
+  /**
+   * 끌기와 '눌러서 고치기' 가 같은 자리에서 일어납니다.
+   * 몇 px 이상 움직였을 때만 끌기로 보고, 그때는 뒤따라오는 click 을 막습니다.
+   */
+  const grab = useRef<{ y: number; kind: 'move' | 'resize'; moved: boolean } | null>(null)
+  const draggedRef = useRef(false)
+
+  const start = (kind: 'move' | 'resize') => (e: React.PointerEvent) => {
+    // 제목은 잡아 끌 수 있어야 하지만, 고치려고 연 입력은 그대로 둡니다.
+    if ((e.target as HTMLElement).closest('input, [data-no-drag]')) return
+    grab.current = { y: e.clientY, kind, moved: false }
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      /* 붙잡지 못해도 끌기는 이어집니다 */
+    }
+  }
+
+  const move = (e: React.PointerEvent) => {
+    const g = grab.current
+    if (!g) return
+    const dy = e.clientY - g.y
+    // 손이 조금 떨린 것까지 끌기로 보면 글자를 못 고칩니다.
+    if (!g.moved && Math.abs(dy) < 4) return
+    g.moved = true
+    onDrag(g.kind, dy, e.clientX)
+  }
+
+  const end = (e: React.PointerEvent) => {
+    const g = grab.current
+    grab.current = null
+    if (!g) return
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch {
+      /* 무시 */
+    }
+    if (!g.moved) return
+    draggedRef.current = true
+    onDragEnd()
+  }
 
   return (
     <div
       data-event
       className={styles.block}
       data-short={height < HOUR_H * 0.7 || undefined}
+      data-dragging={dragging || undefined}
+      onPointerDown={start('move')}
+      onPointerMove={move}
+      onPointerUp={end}
+      onClickCapture={(e) => {
+        if (!draggedRef.current) return
+        draggedRef.current = false
+        e.stopPropagation()
+        e.preventDefault()
+      }}
       style={{
         top,
         height,
@@ -368,12 +482,22 @@ function EventBlock({ slot, hour12, onCommit, onDelete }: BlockProps) {
       />
       <button
         type="button"
+        data-no-drag
         className={styles.remove}
         aria-label={`${event.title} 일정 삭제`}
         onClick={onDelete}
       >
         ×
       </button>
+
+      {/* 아래 모서리를 잡으면 끝나는 시각만 바뀝니다. */}
+      <span
+        className={styles.grip}
+        aria-hidden="true"
+        onPointerDown={start('resize')}
+        onPointerMove={move}
+        onPointerUp={end}
+      />
     </div>
   )
 }

@@ -126,6 +126,8 @@ export type Action =
   | { type: 'TOGGLE_MIND_NODE'; mapId: string; nodeId: string }
   /** 자동 배치 자리에서 얼마나 옮겨 둘지. 절대 좌표가 아닙니다. */
   | { type: 'MOVE_MIND_NODE'; mapId: string; nodeId: string; dx: number; dy: number }
+  /** 가지를 통째로 다른 부모 밑으로 옮깁니다. */
+  | { type: 'REPARENT_MIND_NODE'; mapId: string; nodeId: string; parentId: string }
   | { type: 'RESET_MIND_LAYOUT'; mapId: string }
   | { type: 'SET_SETTINGS'; patch: Partial<Settings> }
   | { type: 'REPLACE'; data: PlannerData }
@@ -523,6 +525,38 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
         ),
       }
     }
+
+    case 'REPARENT_MIND_NODE':
+      return {
+        ...state,
+        mindmaps: state.mindmaps.map((m) => {
+          if (m.id !== action.mapId) return m
+          const node = m.nodes.find((n) => n.id === action.nodeId)
+          const parent = m.nodes.find((n) => n.id === action.parentId)
+          if (!node || !parent || node.id === parent.id) return m
+          // 루트를 옮기면 나머지가 전부 미아가 됩니다.
+          if (!node.parentId) return m
+          // 제 자손 밑으로 들어가면 트리가 고리가 되어 배치가 무한히 돕니다.
+          if (descendantIds(m.nodes, node.id).includes(parent.id)) return m
+
+          const order =
+            m.nodes
+              .filter((n) => n.parentId === parent.id)
+              .reduce((max, n) => Math.max(max, n.order), -1) + 1
+
+          return {
+            ...m,
+            nodes: m.nodes.map((n) => {
+              // 접힌 곳으로 옮기면 옮긴 것이 보이지 않습니다.
+              if (n.id === parent.id && n.collapsed) return { ...n, collapsed: false }
+              if (n.id !== node.id) return n
+              // 새 자리는 자동 배치가 다시 잡아 줍니다 — 손으로 밀어 둔 값은 버립니다.
+              const { dx: _dx, dy: _dy, ...rest } = n
+              return { ...rest, parentId: parent.id, order }
+            }),
+          }
+        }),
+      }
 
     case 'RESET_MIND_LAYOUT':
       return {

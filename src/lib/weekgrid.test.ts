@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
 import type { PlanEvent } from '@/types'
-import { HOUR_H, isTimed, layoutDay, minutesAt, timeAt, type TimedSlot } from './weekgrid'
+import {
+  HOUR_H,
+  isTimed,
+  layoutDay,
+  minutesAt,
+  movedTimes,
+  resizedEnd,
+  snapDelta,
+  timeAt,
+  type TimedSlot,
+} from './weekgrid'
 
 const ev = (id: string, start?: string, end?: string): PlanEvent => ({
   id,
@@ -125,6 +135,57 @@ describe('layoutDay — 겹칠 때', () => {
     expect(slots.every((s) => s.columns === 6)).toBe(true)
     expect(new Set(slots.map((s) => s.column)).size).toBe(6)
     noneOverlap(slots)
+  })
+})
+
+describe('snapDelta — 끌어 옮긴 거리', () => {
+  it('15분 단위로 떨어진다', () => {
+    expect(snapDelta(HOUR_H)).toBe(60)
+    expect(snapDelta(HOUR_H / 2)).toBe(30)
+    expect(snapDelta(HOUR_H / 4)).toBe(15)
+    expect(snapDelta(-HOUR_H)).toBe(-60)
+  })
+
+  it('가까운 쪽으로 붙는다', () => {
+    expect(snapDelta(HOUR_H * 0.1)).toBe(0)
+    expect(snapDelta(HOUR_H * 0.2)).toBe(15)
+  })
+})
+
+describe('movedTimes — 옮기기', () => {
+  it('길이를 그대로 두고 통째로 옮긴다', () => {
+    expect(movedTimes('09:00', '10:30', 60)).toEqual({ start: '10:00', end: '11:30' })
+    expect(movedTimes('09:00', '10:30', -90)).toEqual({ start: '07:30', end: '09:00' })
+  })
+
+  it('끝이 없으면 없는 채로', () => {
+    expect(movedTimes('09:00', undefined, 30)).toEqual({ start: '09:30', end: undefined })
+  })
+
+  it('자정 앞뒤로 넘어가지 않는다', () => {
+    expect(movedTimes('00:30', undefined, -600).start).toBe('00:00')
+    const late = movedTimes('23:00', '23:30', 600)
+    expect(late.end).toBe('24:00')
+    expect(late.start).toBe('23:30')
+  })
+})
+
+describe('resizedEnd — 길이 조절', () => {
+  it('끝만 움직인다', () => {
+    expect(resizedEnd('09:00', '10:00', 30)).toBe('10:30')
+    expect(resizedEnd('09:00', '10:00', -30)).toBe('09:30')
+  })
+
+  it('끝이 없으면 기본 한 시간에서 시작한다', () => {
+    expect(resizedEnd('09:00', undefined, 30)).toBe('10:30')
+  })
+
+  it('시작보다 앞서지 않는다 — 음수 높이면 상자가 뒤집힙니다', () => {
+    expect(resizedEnd('09:00', '10:00', -600)).toBe('09:24')
+  })
+
+  it('자정을 넘지 않는다', () => {
+    expect(resizedEnd('23:00', '23:30', 600)).toBe('24:00')
   })
 })
 

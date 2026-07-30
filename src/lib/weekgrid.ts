@@ -114,6 +114,31 @@ export function minutesAt(offsetY: number): number {
   return Math.min(Math.max(snapped, 0), DAY_MINUTES - 30)
 }
 
+/** 끌어 옮긴 픽셀 → 분. 15분 단위 — 옮길 때는 30분보다 잘게 잡아야 손맛이 납니다. */
+export function snapDelta(dy: number): number {
+  return Math.round((dy / HOUR_H) * 60 / 15) * 15
+}
+
+/** 시작을 옮깁니다. 길이는 그대로 두고 하루 밖으로 나가지 않게 붙잡습니다. */
+export function movedTimes(
+  start: string,
+  end: string | undefined,
+  deltaMin: number,
+): { start: string; end?: string } {
+  const from = timeToMinutes(start)
+  const length = end ? Math.max(0, timeToMinutes(end) - from) : 0
+  const next = Math.min(Math.max(from + deltaMin, 0), DAY_MINUTES - Math.max(length, MIN_MIN))
+  return { start: timeAt(next), end: end ? timeAt(next + length) : undefined }
+}
+
+/** 끝을 늘이고 줄입니다. 시작보다 앞서지 않게, 자정을 넘지 않게. */
+export function resizedEnd(start: string, end: string | undefined, deltaMin: number): string {
+  const from = timeToMinutes(start)
+  const base = end ? timeToMinutes(end) : from + DEFAULT_MIN
+  const next = Math.min(Math.max(base + deltaMin, from + MIN_MIN), DAY_MINUTES)
+  return timeAt(next)
+}
+
 /** 540 → '09:00' */
 export function timeAt(minutes: number): string {
   const h = Math.floor(minutes / 60)

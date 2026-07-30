@@ -118,6 +118,12 @@
   box-shadow: 0 6px 20px rgba(55, 53, 47, 0.16);
 }
 
+/* 여기 떨어뜨리면 이 노드 밑으로 들어간다는 표시 */
+.node[data-drop] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 /* 안쪽 버튼과 입력은 제 커서를 씁니다. */
 .node [data-no-drag] {
   cursor: auto;

@@ -4,7 +4,7 @@ import { InlineAdd } from '@/components/common/InlineAdd'
 import { InlineEdit } from '@/components/common/InlineEdit'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { todayISO } from '@/lib/date'
-import { NODE_W, layoutMindMap, type PlacedNode } from '@/lib/mindmap'
+import { NODE_W, descendantIds, layoutMindMap, type PlacedNode } from '@/lib/mindmap'
 import { uid } from '@/lib/id'
 import { usePlanner } from '@/store/PlannerContext'
 import { TAG_COLORS, type MindNode } from '@/types'
@@ -39,6 +39,10 @@ export function MindMapView() {
    * 손을 뗄 때 한 번만 넘기고, 그전까지는 여기서 그립니다.
    */
   const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | null>(null)
+
+  /** 지금 손에 든 노드를 떨어뜨리면 부모가 될 노드 */
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
 
   /** 끄는 중인 노드만 살아 있는 값으로 갈아 끼워 배치에 넘깁니다. */
   const live = useMemo(() => {
@@ -79,6 +83,32 @@ export function MindMapView() {
   const step = (d: number) => setZoom((z) => Math.min(1.6, Math.max(0.6, Math.round((z + d) * 10) / 10)))
 
   const hasMoved = current?.nodes.some((n) => n.dx || n.dy) ?? false
+
+  /**
+   * 손 아래에 어떤 노드가 있는지 좌표로 찾습니다.
+   *
+   * elementFromPoint 는 끌고 있는 노드가 늘 손 밑에 있어 자기 자신만 잡힙니다.
+   * 배치가 이미 모든 상자를 알고 있으니 그걸로 셈합니다.
+   * 자기 자신과 제 자손은 뺍니다 — 거기로 들어가면 트리가 고리가 됩니다.
+   */
+  const dropTargetAt = (clientX: number, clientY: number, draggedId: string): string | null => {
+    const rect = canvasRef.current?.getBoundingClientRect()
+    if (!rect || !layout || !current) return null
+
+    const x = (clientX - rect.left) / zoom
+    const y = (clientY - rect.top) / zoom
+    const banned = new Set([draggedId, ...descendantIds(current.nodes, draggedId)])
+
+    const hit = layout.nodes.find(
+      (p) =>
+        !banned.has(p.node.id) &&
+        x >= p.x &&
+        x <= p.x + p.w &&
+        y >= p.y &&
+        y <= p.y + p.h,
+    )
+    return hit?.node.id ?? null
+  }
 
   /*
    * 글을 고치는 자리는 뷰가 들고 있습니다.
@@ -241,6 +271,7 @@ export function MindMapView() {
                 style={{ width: layout.width * zoom, height: layout.height * zoom }}
               >
               <div
+                ref={canvasRef}
                 className={styles.canvas}
                 style={{
                   width: layout.width,
@@ -305,9 +336,27 @@ export function MindMapView() {
                     onEditEnd={closeEdit}
                     onEditNext={(kind) => editNext(placed.node, kind)}
                     zoom={zoom}
-                    onDragMove={(dx, dy) => setDrag({ id: placed.node.id, dx, dy })}
-                    onDragEnd={(dx, dy) => {
+                    isDropTarget={dropTarget === placed.node.id}
+                    onDragMove={(dx, dy, clientX, clientY) => {
+                      setDrag({ id: placed.node.id, dx, dy })
+                      setDropTarget(dropTargetAt(clientX, clientY, placed.node.id))
+                    }}
+                    onDragEnd={(dx, dy, clientX, clientY) => {
+                      const target = dropTargetAt(clientX, clientY, placed.node.id)
                       setDrag(null)
+                      setDropTarget(null)
+
+                      // 다른 노드 위에 떨어뜨렸으면 자리를 미는 대신 그 밑으로 들어갑니다.
+                      if (target) {
+                        dispatch({
+                          type: 'REPARENT_MIND_NODE',
+                          mapId: current.id,
+                          nodeId: placed.node.id,
+                          parentId: target,
+                        })
+                        setSent(`'${placed.node.text}' 를 옮겼습니다`)
+                        return
+                      }
                       dispatch({
                         type: 'MOVE_MIND_NODE',
                         mapId: current.id,
@@ -338,8 +387,9 @@ export function MindMapView() {
 
             <p className={styles.hint}>
               글을 누르면 그 자리에서 고칩니다. 적는 동안 <b>Enter</b> 로 옆 가지,{' '}
-              <b>Tab</b> 으로 아래 가지를 이어 만들고 <b>Esc</b> 로 멈춥니다. 노드는 끌어서
-              옮기고, 올리면 나오는 <b>→</b> 로 오늘 할 일에 보내고 <b>×</b> 로 그 아래를
+              <b>Tab</b> 으로 아래 가지를 이어 만들고 <b>Esc</b> 로 멈춥니다. 노드를 끌어
+              빈 자리에 놓으면 그 자리에 두고, <b>다른 노드 위에 놓으면 그 밑으로</b>{' '}
+              들어갑니다. 올리면 나오는 <b>→</b> 로 오늘 할 일에 보내고 <b>×</b> 로 그 아래를
               함께 지웁니다. 판이 크면 위쪽 <b>+ −</b> 로 키우고 줄입니다.
             </p>
           </>
@@ -377,8 +427,10 @@ interface NodeProps {
   onEditNext: (kind: 'sibling' | 'child') => void
   /** 화면 위 움직인 거리를 판 좌표로 되돌리는 데 씁니다. */
   zoom: number
-  onDragMove: (dx: number, dy: number) => void
-  onDragEnd: (dx: number, dy: number) => void
+  /** 지금 이 노드 위에 다른 노드를 들고 있는지 */
+  isDropTarget: boolean
+  onDragMove: (dx: number, dy: number, clientX: number, clientY: number) => void
+  onDragEnd: (dx: number, dy: number, clientX: number, clientY: number) => void
 }
 
 function Node({
@@ -397,6 +449,7 @@ function Node({
   onEditEnd,
   onEditNext,
   zoom,
+  isDropTarget,
   onDragMove,
   onDragEnd,
 }: NodeProps) {
@@ -460,7 +513,7 @@ function Node({
         // 손이 조금 떨린 것까지 이동으로 보면 글자를 못 고칩니다.
         if (!g.moved && Math.abs(mx) < 4 && Math.abs(my) < 4) return
         g.moved = true
-        onDragMove(g.dx + mx, g.dy + my)
+        onDragMove(g.dx + mx, g.dy + my, e.clientX, e.clientY)
       }}
       onPointerUp={(e) => {
         const g = grab.current
@@ -474,7 +527,7 @@ function Node({
         if (!g.moved) return
         dragged.current = true
         const { mx, my } = offsetOf(e, g)
-        onDragEnd(g.dx + mx, g.dy + my)
+        onDragEnd(g.dx + mx, g.dy + my, e.clientX, e.clientY)
       }}
       onClickCapture={(e) => {
         // 끌고 나서 손을 떼면 click 이 뒤따라옵니다 — 편집이 열리지 않게 삼킵니다.
@@ -484,6 +537,7 @@ function Node({
         e.preventDefault()
       }}
       data-dragging={grab.current?.moved || undefined}
+      data-drop={isDropTarget || undefined}
       data-root={isRoot || undefined}
       data-branch={!isRoot && depth === 1 ? '' : undefined}
       data-tag={isRoot ? undefined : branchTag(placed.branch)}

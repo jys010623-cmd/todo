@@ -147,6 +147,77 @@ describe('마인드맵 자리 옮기기', () => {
   })
 })
 
+describe('마인드맵 가지 재배치', () => {
+  /** r ─ a ─ a1 ─ a11 / r ─ b */
+  const deep = () =>
+    base({
+      mindmaps: [{ id: 'm', title: 't', nodes: [
+        { id: 'r', text: 'R', order: 0 },
+        { id: 'a', text: 'A', parentId: 'r', order: 0, dx: 40, dy: 40 },
+        { id: 'a1', text: 'A1', parentId: 'a', order: 0 },
+        { id: 'a11', text: 'A11', parentId: 'a1', order: 0 },
+        { id: 'b', text: 'B', parentId: 'r', order: 1 },
+      ] }],
+    })
+  const parentOf = (s: PlannerData, id: string) =>
+    s.mindmaps[0].nodes.find((n) => n.id === id)?.parentId
+
+  it('다른 노드 밑으로 들어간다', () => {
+    const next = reducer(deep(), { type: 'REPARENT_MIND_NODE', mapId: 'm', nodeId: 'a', parentId: 'b' })
+    expect(parentOf(next, 'a')).toBe('b')
+    // 자손은 따라옵니다 — 부모만 바뀌면 됩니다.
+    expect(parentOf(next, 'a1')).toBe('a')
+    expect(parentOf(next, 'a11')).toBe('a1')
+  })
+
+  it('손으로 밀어 둔 자리는 버린다 — 새 자리는 자동 배치가 잡습니다', () => {
+    const next = reducer(deep(), { type: 'REPARENT_MIND_NODE', mapId: 'm', nodeId: 'a', parentId: 'b' })
+    const a = next.mindmaps[0].nodes.find((n) => n.id === 'a')!
+    expect(a.dx).toBeUndefined()
+    expect(a.dy).toBeUndefined()
+  })
+
+  it('새 형제들의 맨 뒤로 간다', () => {
+    const state = base({
+      mindmaps: [{ id: 'm', title: 't', nodes: [
+        { id: 'r', text: 'R', order: 0 },
+        { id: 'x', text: 'X', parentId: 'r', order: 0 },
+        { id: 'p', text: 'P', parentId: 'r', order: 1 },
+        { id: 'p1', text: 'P1', parentId: 'p', order: 0 },
+      ] }],
+    })
+    const next = reducer(state, { type: 'REPARENT_MIND_NODE', mapId: 'm', nodeId: 'x', parentId: 'p' })
+    const kids = next.mindmaps[0].nodes.filter((n) => n.parentId === 'p').sort((a, b) => a.order - b.order)
+    expect(kids.map((n) => n.id)).toEqual(['p1', 'x'])
+  })
+
+  it.each([
+    ['제 자손 밑으로', 'a', 'a11'],
+    ['자기 자신 밑으로', 'a', 'a'],
+    ['루트를 옮기려고', 'r', 'b'],
+    ['없는 부모로', 'a', '없음'],
+  ])('%s 는 무시한다 — 트리가 고리가 되면 배치가 무한히 돕니다', (_name, nodeId, parentId) => {
+    const before = deep()
+    const next = reducer(before, { type: 'REPARENT_MIND_NODE', mapId: 'm', nodeId, parentId })
+    expect(next.mindmaps[0].nodes.map((n) => [n.id, n.parentId])).toEqual(
+      before.mindmaps[0].nodes.map((n) => [n.id, n.parentId]),
+    )
+  })
+
+  it('접힌 곳으로 옮기면 함께 펼친다', () => {
+    const state = base({
+      mindmaps: [{ id: 'm', title: 't', nodes: [
+        { id: 'r', text: 'R', order: 0 },
+        { id: 'a', text: 'A', parentId: 'r', order: 0 },
+        { id: 'c', text: 'C', parentId: 'r', order: 1, collapsed: true },
+        { id: 'c1', text: 'C1', parentId: 'c', order: 0 },
+      ] }],
+    })
+    const next = reducer(state, { type: 'REPARENT_MIND_NODE', mapId: 'm', nodeId: 'a', parentId: 'c' })
+    expect(next.mindmaps[0].nodes.find((n) => n.id === 'c')!.collapsed).toBeFalsy()
+  })
+})
+
 describe('마인드맵 키보드 편집 — 이어 쓰기', () => {
   /** 루트 아래 a, b, c */
   const withSiblings = () =>

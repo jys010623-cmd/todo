@@ -4,6 +4,7 @@ import { formatHash, parseHash } from './route'
 
 describe('parseHash', () => {
   it('화면 이름만 있는 주소', () => {
+    expect(parseHash('#/home')).toEqual({ view: 'home' })
     expect(parseHash('#/today')).toEqual({ view: 'today' })
     expect(parseHash('#/settings')).toEqual({ view: 'settings' })
   })
@@ -49,7 +50,7 @@ describe('formatHash', () => {
   })
 
   it('만든 주소는 그대로 다시 읽힌다', () => {
-    for (const view of ['today', 'week', 'month', 'goals', 'mandal', 'mindmap', 'study', 'settings'] as const) {
+    for (const view of ['home', 'today', 'week', 'month', 'goals', 'mandal', 'mindmap', 'study', 'settings'] as const) {
       const hash = formatHash(view, '2026-07-30')
       expect(parseHash(hash)?.view).toBe(view)
     }

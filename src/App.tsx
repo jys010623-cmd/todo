@@ -2,6 +2,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { PlannerPanel } from '@/components/planner/PlannerPanel'
 import { usePlanner } from '@/store/PlannerContext'
 import { GoalsView } from '@/views/GoalsView'
+import { HomeView } from '@/views/HomeView'
 import { MandalView } from '@/views/MandalView'
 import { MindMapView } from '@/views/MindMapView'
 import { MonthView } from '@/views/MonthView'
@@ -21,6 +22,9 @@ export function App() {
   const { view } = usePlanner()
 
   switch (view) {
+    case 'home':
+      return <AppShell center={<HomeView />} />
+
     case 'today':
       return <AppShell center={<TodayView />} />
 
@@ -46,6 +50,6 @@ export function App() {
       return <AppShell center={<SettingsView />} />
 
     default:
-      return <AppShell center={<MonthView />} right={<PlannerPanel />} />
+      return <AppShell center={<HomeView />} />
   }
 }

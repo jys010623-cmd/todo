@@ -8,7 +8,17 @@ import type { ISODate, ViewId } from '@/types'
  * 어디에 올려도 그대로 동작합니다.
  */
 
-const VIEWS: ViewId[] = ['today', 'week', 'month', 'goals', 'mandal', 'mindmap', 'study', 'settings']
+const VIEWS: ViewId[] = [
+  'home',
+  'today',
+  'week',
+  'month',
+  'goals',
+  'mandal',
+  'mindmap',
+  'study',
+  'settings',
+]
 
 /** 날짜를 주소에 담는 화면 — 나머지는 날짜와 무관합니다. */
 const DATED: ViewId[] = ['week', 'month']

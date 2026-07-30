@@ -87,7 +87,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
 
   // 처음 열 때는 주소가 먼저입니다 — 북마크나 새로고침으로 들어와도 그 화면이 나와야 합니다.
   const initial = parseHash(window.location.hash)
-  const [view, setView] = useState<ViewId>(initial?.view ?? 'month')
+  const [view, setView] = useState<ViewId>(initial?.view ?? 'home')
   const [selectedDate, setSelectedDate] = useState<ISODate>(initial?.date ?? todayISO)
   const [cursorMonth, setCursorMonth] = useState<ISODate>(initial?.date ?? todayISO)
 

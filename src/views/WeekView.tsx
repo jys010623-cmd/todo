@@ -29,6 +29,7 @@ import {
   type TimedSlot,
 } from '@/lib/weekgrid'
 import { usePlanner } from '@/store/PlannerContext'
+import type { EventOccurrence } from '@/types'
 import styles from './WeekView.module.css'
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h)
@@ -422,7 +423,7 @@ export function WeekView() {
 }
 
 interface BlockProps {
-  slot: TimedSlot
+  slot: TimedSlot<EventOccurrence>
   hour12: boolean
   dragging: boolean
   onDrag: (kind: 'move' | 'resize', dy: number, clientX: number) => void
@@ -519,7 +520,9 @@ function EventBlock({ slot, hour12, dragging, onDrag, onDragEnd, onCommit, onDel
         type="button"
         data-no-drag
         className={styles.remove}
-        aria-label={`${event.title} 일정 삭제`}
+        aria-label={
+          event.virtual ? `${event.title} 이 날만 건너뛰기` : `${event.title} 일정 삭제`
+        }
         onClick={onDelete}
       >
         ×

@@ -370,7 +370,12 @@ function Node({
         // 버튼과 입력은 제 일을 해야 합니다.
         if ((e.target as HTMLElement).closest('[data-no-drag]')) return
         grab.current = { x: e.clientX, y: e.clientY, dx: node.dx ?? 0, dy: node.dy ?? 0, moved: false }
-        e.currentTarget.setPointerCapture(e.pointerId)
+        // 이미 놓인 포인터면 붙잡기가 실패합니다 — 붙잡지 못해도 끌기는 이어집니다.
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId)
+        } catch {
+          /* 무시 */
+        }
       }}
       onPointerMove={(e) => {
         const g = grab.current
@@ -385,7 +390,11 @@ function Node({
         const g = grab.current
         grab.current = null
         if (!g) return
-        e.currentTarget.releasePointerCapture(e.pointerId)
+        try {
+          e.currentTarget.releasePointerCapture(e.pointerId)
+        } catch {
+          /* 무시 */
+        }
         if (!g.moved) return
         dragged.current = true
         const { mx, my } = offsetOf(e, g)

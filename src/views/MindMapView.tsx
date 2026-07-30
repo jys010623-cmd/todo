@@ -96,16 +96,20 @@ export function MindMapView() {
     if (!node) return
 
     const text = editing.draft.trim()
-    if (text === node.text) return
 
-    // 빈 노드를 남기면 판에 '…' 만 떠 있게 됩니다. 자식이 없을 때만 치웁니다.
-    if (!text && !current.nodes.some((n) => n.parentId === node.id) && node.parentId) {
+    /*
+     * 빈 노드를 남기면 판에 '…' 만 떠 있게 됩니다.
+     * 이 검사가 '안 바뀜' 보다 먼저여야 합니다 — 갓 만든 노드는 적은 것도 원래 글도
+     * 둘 다 빈 문자열이라, 뒤에 두면 걸러져서 영영 치워지지 않습니다.
+     * 루트와 자식을 거느린 노드는 지우면 아래가 통째로 사라지므로 그대로 둡니다.
+     */
+    if (!text && node.parentId && !current.nodes.some((n) => n.parentId === node.id)) {
       dispatch({ type: 'DELETE_MIND_NODE', mapId: current.id, nodeId: node.id })
       return
     }
-    if (text) {
-      dispatch({ type: 'UPDATE_MIND_NODE', mapId: current.id, nodeId: node.id, patch: { text } })
-    }
+
+    if (!text || text === node.text) return
+    dispatch({ type: 'UPDATE_MIND_NODE', mapId: current.id, nodeId: node.id, patch: { text } })
   }
 
   /**

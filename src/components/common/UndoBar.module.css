@@ -16,6 +16,15 @@
   box-shadow: 0 6px 24px rgba(55, 53, 47, 0.18);
   transform: translateX(-50%);
   animation: rise var(--dur) var(--ease);
+  /*
+   * 이 바는 달력 마지막 주 줄 위에 뜹니다. 그대로 두면 8초 동안 그 자리의 날짜를
+   * 눌러도 바가 클릭을 먹습니다. 판은 통과시키고 버튼만 받게 합니다.
+   */
+  pointer-events: none;
+}
+
+.bar button {
+  pointer-events: auto;
 }
 
 @keyframes rise {

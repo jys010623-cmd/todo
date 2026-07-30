@@ -11,12 +11,12 @@ import styles from './SettingsView.module.css'
 
 /** 액센트 후보 — 태그 팔레트의 solid 값을 그대로 씁니다. 전부 지면 대비 3:1 이상입니다. */
 const ACCENTS: { value: string; label: string }[] = [
-  { value: '#6e56cf', label: '라일락' },
-  { value: '#3e63dd', label: '블루' },
-  { value: '#2b9a66', label: '민트' },
-  { value: '#e54d2e', label: '코랄' },
-  { value: '#bf8100', label: '허니' },
-  { value: '#31322e', label: '잉크' },
+  { value: '#6d5ce7', label: '라일락' },
+  { value: '#2f6fed', label: '블루' },
+  { value: '#047857', label: '민트' },
+  { value: '#dc3520', label: '코랄' },
+  { value: '#b45c09', label: '허니' },
+  { value: '#1c1c1e', label: '잉크' },
 ]
 
 interface StepperProps {

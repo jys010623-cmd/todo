@@ -2,51 +2,50 @@
  * PlanMe — Design Tokens
  * 이 파일이 유일한 값의 출처입니다.
  * 모든 *.module.css 는 리터럴 값 대신 var(--*) 만 사용합니다.
- *
- * 색은 docs/design/month-view.png 에서 직접 추출했습니다.
  */
 
 :root {
-  /* ── Surface — 오프화이트 ───────────────────────────────
-   * 순백은 한 군데도 쓰지 않습니다. 흰 바탕에 회색 괘선을 그으면
-   * 아무리 여백을 줘도 캘린더 앱처럼 읽혀서, 지면 자체를 종이색으로 깔았습니다.
-   * 노란기(hue 40°)를 일정하게 유지하고 명도만 내려 한 장의 종이처럼 보이게 합니다. */
-  --bg: #f6f5f1; /* 앱 배경 · 사이드바 — 가장 깊은 종이색 */
-  --surface: #fbfaf7; /* 펼쳐진 지면 — 달력 · 우측 패널 */
-  --surface-sunken: #efede7; /* 활성 네비 · 눌린 면 */
-  --surface-card: #fdfcfa; /* 지면 위에 얹히는 카드 */
+  /* ── Surface ───────────────────────────────────────────
+   * 예전에는 노란기(hue 40°)를 세게 넣어 '종이' 를 흉내 냈는데, 노란기가 강하면
+   * 종이가 아니라 '바랜 종이' 로 읽혔습니다. 중성 회색에 가깝게 내리고 따뜻함은
+   * 알아채지 못할 만큼만 남깁니다(hue 40°, 채도 2% 이하).
+   *
+   * 순백은 여전히 안 씁니다 — 흰 바탕에 회색 괘선을 그으면 표 계산기처럼 읽힙니다. */
+  --bg: #f7f7f6; /* 앱 배경 · 사이드바 */
+  --surface: #fcfcfb; /* 펼쳐진 지면 — 달력 · 우측 패널 */
+  --surface-sunken: #f0f0ee; /* 활성 네비 · 눌린 면 */
+  --surface-card: #ffffff; /* 지면 위에 얹히는 카드 — 여기만 흰색으로 띄웁니다 */
 
-  --border: #e6e3db; /* 카드 테두리 */
-  --divider: #edebe4; /* 달력 괘선 — 테두리보다 더 옅게 */
+  --border: #e5e5e3; /* 카드 테두리 */
+  --divider: #eeeeec; /* 달력 괘선 — 테두리보다 더 옅게 */
 
   /* ── Text ──────────────────────────────────────────────
-   * 흰 지면 위 명도 대비를 기준으로 잡았습니다.
    * text-3 까지는 본문에 써도 WCAG AA(4.5:1)를 넘기고,
-   * text-4 는 대비가 낮아 '읽지 않아도 되는 것'에만 씁니다. */
-  --text-1: #37352f; /* 11.8:1 — 순검정이 아닌 따뜻한 먹색 */
-  --text-2: #5f5c55; /* 6.4:1 */
-  --text-3: #757068; /* 4.7:1 — 캡션 · 보조 정보 */
-  --text-4: #b3afa6; /* 2.1:1 — 지난 달 날짜처럼 장식에 가까운 것 */
+   * text-4 는 대비가 낮아 '읽지 않아도 되는 것'에만 씁니다.
+   * 먹색의 노란기도 함께 뺐습니다 — 지면이 중성인데 글자만 누러면 바래 보입니다. */
+  --text-1: #1c1c1e; /* 15.8:1 */
+  --text-2: #56565a; /* 7.4:1 */
+  --text-3: #717176; /* 4.7:1 — 캡션 · 보조 정보 */
+  --text-4: #b0b0b4; /* 2.2:1 — 지난 달 날짜처럼 장식에 가까운 것 */
 
   /* ── Accent ──────────────────────────────────────────
    * 설정에서 고른 색은 --accent-base 로 들어옵니다(:root 인라인).
    * 인라인 스타일은 규칙보다 세서, --accent 를 직접 주입하면 어두운 테마에서
    * 밝기를 손볼 수 없습니다. 한 겹 두고 여기서 계산합니다. */
-  --accent-base: #6e56cf;
+  --accent-base: #6d5ce7;
   --accent: var(--accent-base);
   /* accent 가 바뀌면 함께 따라오도록 계산합니다.
    * 흰색이 아니라 지면색에 섞어야 액센트 배경만 차갑게 뜨지 않습니다. */
-  --accent-soft: color-mix(in srgb, var(--accent) 11%, var(--surface));
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, var(--surface));
   --accent-faint: color-mix(in srgb, var(--accent) 6%, transparent);
-  --accent-contrast: #fbfaf7;
+  --accent-contrast: #ffffff;
 
   /* 오늘 날짜 표식 — 지면에서 유일하게 꽉 찬 도형입니다. */
-  --today: #37352f;
-  --today-contrast: #fbfaf7;
+  --today: #1c1c1e;
+  --today-contrast: #ffffff;
 
-  /* 회색이 아니라 먹색을 옅게 깔아, 올려도 지면이 차가워지지 않게 합니다. */
-  --hover: rgba(55, 53, 47, 0.04);
-  --press: rgba(55, 53, 47, 0.08);
+  --hover: rgba(28, 28, 30, 0.04);
+  --press: rgba(28, 28, 30, 0.08);
 
   /* ── Tag — 색마다 세 단계 ──────────────────────────────
    * solid : 점 · 막대 · 프로그레스 (배경 대비 3:1 이상)
@@ -55,25 +54,32 @@
    *
    * 파스텔을 그대로 쓰면 글자가 읽히지 않아, 배경과 글자를
    * 분리했습니다. 이름은 그대로 두고 값만 갈아 끼웠습니다. */
-  --tag-mint: #2b9a66; /* 3.5:1 */
-  --tag-blue: #3e63dd; /* 5.2:1 */
-  --tag-lilac: #6e56cf; /* 5.4:1 */
-  --tag-coral: #e54d2e; /* 3.8:1 */
-  --tag-honey: #bf8100; /* 3.3:1 — 노랑은 밝아서 한참 내려야 3:1 을 넘깁니다 */
+  /*
+   * 선명한 색일수록 흰 지면에서는 대비가 떨어집니다.
+   * 초록·주황은 눈에 밝게 보여도 명도가 높아 3:1 을 못 넘겨, 채도는 살리고
+   * 명도만 한 단계 내렸습니다. 노랑 계열은 특히 한참 내려야 합니다.
+   */
+  --tag-mint: #047857;
+  --tag-blue: #2f6fed;
+  --tag-lilac: #6d5ce7;
+  --tag-coral: #dc3520;
+  --tag-honey: #b45c09;
 
-  /* soft 는 색을 지면에 9% 섞은 값입니다 — 흰색이 아니라 종이색에 섞어야
-   * 칩만 차갑게 떠오르지 않고 같은 종이 위에 얹힌 것처럼 보입니다. */
-  --tag-mint-soft: #e8f1ea;
-  --tag-blue-soft: #eaecf5;
-  --tag-lilac-soft: #eeebf3;
-  --tag-coral-soft: #faede9;
-  --tag-honey-soft: #f6efe1;
+  /* soft 는 지면에 색을 한 방울 섞은 값입니다 — 흰색이 아니라 지면색에 섞어야
+   * 칩만 따로 떠오르지 않고 같은 면에 얹힌 것처럼 보입니다. */
+  --tag-mint-soft: color-mix(in srgb, var(--tag-mint) 12%, var(--surface));
+  --tag-blue-soft: color-mix(in srgb, var(--tag-blue) 10%, var(--surface));
+  --tag-lilac-soft: color-mix(in srgb, var(--tag-lilac) 10%, var(--surface));
+  --tag-coral-soft: color-mix(in srgb, var(--tag-coral) 12%, var(--surface));
+  --tag-honey-soft: color-mix(in srgb, var(--tag-honey) 16%, var(--surface));
 
-  --tag-mint-text: #1c7549; /* 4.9:1 */
-  --tag-blue-text: #3358d4; /* 5.1:1 */
-  --tag-lilac-text: #6550b9; /* 5.2:1 */
-  --tag-coral-text: #ca3214; /* 4.6:1 */
-  --tag-honey-text: #9a5a00; /* 4.8:1 */
+  /* solid 를 그대로 글자에 쓰면 옅은 색이 soft 위에서 안 읽힙니다.
+   * 먹색을 섞어 4.5:1 을 넘기되, 색이 뭐였는지는 남깁니다. */
+  --tag-mint-text: color-mix(in srgb, var(--tag-mint) 68%, var(--text-1));
+  --tag-blue-text: color-mix(in srgb, var(--tag-blue) 82%, var(--text-1));
+  --tag-lilac-text: color-mix(in srgb, var(--tag-lilac) 82%, var(--text-1));
+  --tag-coral-text: color-mix(in srgb, var(--tag-coral) 70%, var(--text-1));
+  --tag-honey-text: color-mix(in srgb, var(--tag-honey) 85%, var(--text-1));
 
   /* ── Typography — Pretendard ───────────────────────────
    * Pretendard Variable 을 CDN 에서 dynamic subset 으로 받습니다(index.html).
@@ -137,55 +143,54 @@
 /*
  * ── 어두운 테마 ────────────────────────────────────────────
  *
- * 회색으로 뒤집지 않습니다. 이 지면의 정체성은 '따뜻한 종이' 라서, 노란기(hue 40°)를
- * 그대로 두고 명도만 뒤집었습니다. 차가운 회색으로 바꾸면 다른 앱이 됩니다.
- *
- * 값의 역할은 밝은 테마와 하나씩 짝이 맞습니다 — 대비도 같은 기준으로 잡았습니다
+ * 밝은 테마와 하나씩 짝이 맞습니다 — 대비도 같은 기준입니다
  * (text-3 까지 본문에 써도 4.5:1 을 넘고, text-4 는 장식용).
+ *
+ * 순검정(#000)은 안 씁니다. OLED 에서는 또렷하지만 면과 면의 경계가 사라져
+ * 어디까지가 카드인지 안 보입니다.
  */
 :root[data-theme='dark'] {
   /* 브라우저가 스크롤바·기본 폼을 어둡게 그리도록 */
   color-scheme: dark;
 
-  --bg: #171614;
-  --surface: #1e1d1a;
-  --surface-sunken: #2a2824;
-  --surface-card: #232220;
+  --bg: #131315;
+  --surface: #1a1a1d;
+  --surface-sunken: #232327;
+  --surface-card: #202024;
 
-  --border: #35322c;
-  --divider: #2b2925;
+  --border: #303036;
+  --divider: #26262b;
 
-  --text-1: #ece9e2; /* 13.6:1 */
-  --text-2: #b5b0a6; /* 7.9:1 */
-  --text-3: #8e8980; /* 4.9:1 */
-  --text-4: #5d5952; /* 2.5:1 — 지난 달 날짜처럼 읽지 않아도 되는 것 */
+  --text-1: #f0f0f2; /* 15.1:1 */
+  --text-2: #b0b0b6; /* 7.6:1 */
+  --text-3: #85858c; /* 4.6:1 */
+  --text-4: #56565c; /* 2.2:1 — 지난 달 날짜처럼 읽지 않아도 되는 것 */
 
   /* 오늘 표식은 지면에서 유일하게 꽉 찬 도형 — 밝은 테마의 먹색 자리에 밝은 색이 옵니다. */
-  --today: #ece9e2;
-  --today-contrast: #1e1d1a;
+  --today: #f0f0f2;
+  --today-contrast: #131315;
 
-  --hover: rgba(236, 233, 226, 0.05);
-  --press: rgba(236, 233, 226, 0.1);
+  --hover: rgba(240, 240, 242, 0.05);
+  --press: rgba(240, 240, 242, 0.1);
 
   /* 고른 색을 그대로 쓰면 어두운 지면에서 가라앉습니다 — 흰색을 섞어 띄웁니다. */
-  --accent: color-mix(in srgb, var(--accent-base) 62%, #fff);
+  --accent: color-mix(in srgb, var(--accent-base) 72%, #fff);
   --accent-soft: color-mix(in srgb, var(--accent) 16%, var(--surface));
   --accent-faint: color-mix(in srgb, var(--accent) 12%, transparent);
-  --accent-contrast: #171614;
+  --accent-contrast: #131315;
 
   /* 태그도 밝은 쪽으로 올립니다. 어두운 지면에서 원래 값은 형태가 안 보입니다. */
-  --tag-mint: #4cc38a;
-  --tag-blue: #7b9cff;
-  --tag-lilac: #a08cff;
-  --tag-coral: #ff8f70;
-  --tag-honey: #e0b03c;
+  --tag-mint: #34d399;
+  --tag-blue: #7aa2ff;
+  --tag-lilac: #a595ff;
+  --tag-coral: #ff8a72;
+  --tag-honey: #f5b942;
 
-  /* 지면에 색을 한 방울 — 밝은 테마와 같은 방식이되 어두운 쪽으로 */
-  --tag-mint-soft: color-mix(in srgb, var(--tag-mint) 16%, var(--surface));
-  --tag-blue-soft: color-mix(in srgb, var(--tag-blue) 16%, var(--surface));
-  --tag-lilac-soft: color-mix(in srgb, var(--tag-lilac) 16%, var(--surface));
-  --tag-coral-soft: color-mix(in srgb, var(--tag-coral) 16%, var(--surface));
-  --tag-honey-soft: color-mix(in srgb, var(--tag-honey) 16%, var(--surface));
+  --tag-mint-soft: color-mix(in srgb, var(--tag-mint) 15%, var(--surface));
+  --tag-blue-soft: color-mix(in srgb, var(--tag-blue) 15%, var(--surface));
+  --tag-lilac-soft: color-mix(in srgb, var(--tag-lilac) 15%, var(--surface));
+  --tag-coral-soft: color-mix(in srgb, var(--tag-coral) 15%, var(--surface));
+  --tag-honey-soft: color-mix(in srgb, var(--tag-honey) 15%, var(--surface));
 
   /* soft 가 어두우므로 글자는 태그색 그대로가 가장 잘 읽힙니다. */
   --tag-mint-text: var(--tag-mint);

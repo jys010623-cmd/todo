@@ -2,7 +2,7 @@ import type { PlannerData, Settings } from '@/types'
 
 /** 설정의 기준값 — 저장된 값이 망가졌을 때 되돌아올 자리이기도 합니다. */
 export const DEFAULT_SETTINGS: Settings = {
-  accent: '#6e56cf',
+  accent: '#6d5ce7',
   // 처음에는 기기 설정을 따릅니다 — 고르라고 묻기 전에 이미 맞아 있는 편이 낫습니다.
   theme: 'system',
   // 25분 집중 / 5분 휴식 — 처음 제안된 그대로가 가장 널리 쓰입니다.

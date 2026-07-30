@@ -35,8 +35,11 @@ const LEGACY_TAG: Record<string, TagColor> = {
 
 const VALID_TAGS = new Set<string>(TAG_COLORS)
 
-/** 지금까지 기본값이었던 액센트들 — 현재 액센트로 옮겨 줍니다. */
-const LEGACY_ACCENTS = new Set(['#7c6ef6', '#9082cc'])
+/**
+ * 지금까지 기본값이었던 액센트들 — 현재 액센트로 옮겨 줍니다.
+ * 기본값은 고른 것이 아니라 주어진 것이라, 팔레트를 갈면 따라와야 합니다.
+ */
+const LEGACY_ACCENTS = new Set(['#7c6ef6', '#9082cc', '#6e56cf'])
 
 const SUB_GOALS = 8
 const ACTIONS = 8

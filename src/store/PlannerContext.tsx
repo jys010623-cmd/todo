@@ -161,7 +161,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       document.documentElement.dataset.theme = dark ? 'dark' : 'light'
       // 모바일 브라우저의 주소창까지 지면 색에 맞춥니다.
       const meta = document.querySelector('meta[name="theme-color"]')
-      if (meta) meta.setAttribute('content', dark ? '#171614' : '#f6f5f1')
+      if (meta) meta.setAttribute('content', dark ? '#131315' : '#f7f7f6')
     }
 
     apply()

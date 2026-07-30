@@ -49,13 +49,31 @@ export function WeekView() {
    * 끄는 동안의 모습. 매 움직임마다 dispatch 하면 저장까지 따라와 판이 버벅입니다.
    * 손을 뗄 때 한 번만 넘기고, 그전까지는 여기서 그립니다.
    */
-  const [dragging, setDragging] = useState<{
+  type Dragging = {
     id: string
     kind: 'move' | 'resize'
+    /** 끄는 동안 그려 줄 열 */
     date: string
+    /**
+     * 저장할 날짜. 반복에서 펼쳐진 것은 없습니다 —
+     * 원본 날짜를 옮기면 시리즈 전체가 다른 요일로 밀립니다. 시간만 바꿉니다.
+     */
+    commitDate?: string
     start: string
     end?: string
-  } | null>(null)
+  }
+  const [dragging, setDragging] = useState<Dragging | null>(null)
+
+  /*
+   * 손을 뗄 때 쓸 값은 ref 로도 들고 있습니다.
+   * 빠르게 끌면 pointermove 의 setState 가 반영되기 전에 pointerup 이 옵니다.
+   * 그때 상태만 보면 아직 null 이라 아무 일도 일어나지 않습니다.
+   */
+  const draggingRef = useRef<Dragging | null>(null)
+  const setDrag = (next: Dragging | null) => {
+    draggingRef.current = next
+    setDragging(next)
+  }
 
   /** 격자에서 누른 자리 — 여기에 입력창이 뜹니다. */
   const [composing, setComposing] = useState<{ date: string; minutes: number } | null>(null)
@@ -350,21 +368,39 @@ export function WeekView() {
                       onDrag={(kind, dy, clientX) => {
                         const e = slot.event
                         const delta = snapDelta(dy)
+                        // 반복이라도 시간은 원본이 들고 있으므로 sourceId 로 고칩니다.
                         if (kind === 'resize') {
-                          setDragging({ id: e.id, kind, date, start: e.start as string, end: resizedEnd(e.start as string, e.end, delta) })
+                          setDrag({
+                            id: e.sourceId,
+                            kind,
+                            date: e.date,
+                            start: e.start as string,
+                            end: resizedEnd(e.start as string, e.end, delta),
+                          })
                           return
                         }
                         const moved = movedTimes(e.start as string, e.end, delta)
-                        setDragging({ id: e.id, kind, date: dayUnder(clientX) ?? date, ...moved })
+                        const to = e.virtual ? date : (dayUnder(clientX) ?? date)
+                        setDrag({
+                          id: e.sourceId,
+                          kind,
+                          date: to,
+                          commitDate: e.virtual ? undefined : to,
+                          ...moved,
+                        })
                       }}
                       onDragEnd={() => {
-                        if (!dragging) return
+                        const d = draggingRef.current
+                        if (!d) return
+                        // date 를 undefined 로 넘기면 그대로 덮어써 일정이 날짜를 잃습니다.
                         dispatch({
                           type: 'UPDATE_EVENT',
-                          id: dragging.id,
-                          patch: { date: dragging.date, start: dragging.start, end: dragging.end },
+                          id: d.id,
+                          patch: d.commitDate
+                            ? { date: d.commitDate, start: d.start, end: d.end }
+                            : { start: d.start, end: d.end },
                         })
-                        setDragging(null)
+                        setDrag(null)
                       }}
                       onCommit={(next) =>
                         dispatch({

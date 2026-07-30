@@ -79,6 +79,19 @@
   gap: var(--s2);
 }
 
+/* 가져오기 결과 한 줄 — 설명 아래에 붙습니다. */
+.note {
+  margin-top: var(--s2);
+  font-size: var(--fs-cap);
+  line-height: 1.5;
+  color: var(--tag-mint-text);
+}
+
+.note[data-error] {
+  color: var(--tag-coral-text);
+}
+
+.button,
 .danger {
   padding: var(--s1) var(--s4);
   border-radius: var(--r-full);
@@ -90,6 +103,11 @@
   transition:
     color var(--dur) var(--ease),
     background-color var(--dur) var(--ease);
+}
+
+.button:hover {
+  color: var(--text-1);
+  background: var(--press);
 }
 
 .danger:hover {

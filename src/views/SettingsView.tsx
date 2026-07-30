@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { Segmented } from '@/components/common/Segmented'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { todayISO } from '@/lib/date'
+import { parseData } from '@/lib/storage'
 import { createInitialData } from '@/store/initial'
 import { usePlanner } from '@/store/PlannerContext'
 import type { PlannerData } from '@/types'
@@ -23,6 +25,38 @@ export function SettingsView() {
 
   // 되돌릴 수 없는 동작이라 한 번 더 누르게 합니다.
   const [confirming, setConfirming] = useState(false)
+
+  const fileRef = useRef<HTMLInputElement>(null)
+  /** 가져오기 결과 한 줄 — 성공도 실패도 조용히 지나가면 뭐가 됐는지 알 수 없습니다. */
+  const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  const exportData = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `planme-${todayISO()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const importData = async (file: File) => {
+    try {
+      // 저장된 것을 읽을 때와 같은 길을 태웁니다 — 검사를 따로 쓰면 둘이 어긋납니다.
+      const next = parseData(JSON.parse(await file.text()))
+      if (!next) {
+        setImportMsg({ ok: false, text: 'PlanMe 백업 파일이 아닙니다.' })
+        return
+      }
+      dispatch({ type: 'REPLACE', data: next })
+      setImportMsg({
+        ok: true,
+        text: `가져왔습니다. 일정 ${next.events.length} · 할 일 ${next.todos.length}`,
+      })
+    } catch {
+      setImportMsg({ ok: false, text: '파일을 읽지 못했습니다.' })
+    }
+  }
 
   const clearAll = () => {
     if (!confirming) {
@@ -96,11 +130,50 @@ export function SettingsView() {
 
         <section className={styles.row}>
           <div className={styles.label}>
+            <h2 className={styles.labelTitle}>백업</h2>
+            <p className={styles.labelBody}>
+              기록은 이 브라우저에만 있습니다. 방문 기록을 지우거나 브라우저를 바꾸면 함께
+              사라지니, 가끔 파일로 내려받아 두세요. 가져오면 지금 기록을 덮어씁니다.
+            </p>
+            {importMsg && (
+              <p className={styles.note} data-error={!importMsg.ok || undefined}>
+                {importMsg.text}
+              </p>
+            )}
+          </div>
+          <div className={styles.actions}>
+            <button type="button" className={styles.button} onClick={exportData}>
+              내보내기
+            </button>
+            <button
+              type="button"
+              className={styles.button}
+              onClick={() => fileRef.current?.click()}
+            >
+              가져오기
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="sr-only"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                // 같은 파일을 다시 골라도 change 가 나도록 비웁니다.
+                e.target.value = ''
+                if (file) void importData(file)
+              }}
+            />
+          </div>
+        </section>
+
+        <section className={styles.row}>
+          <div className={styles.label}>
             <h2 className={styles.labelTitle}>데이터</h2>
             <p className={styles.labelBody}>
-              이 브라우저에만 저장됩니다. 일정 {data.events.length} · 할 일 {data.todos.length} ·
-              목표 {data.goals.length} · 위시리스트 {data.wishes.length} · 만다라트{' '}
-              {data.mandals.length} · 과목 {data.subjects.length} · 메모{' '}
+              일정 {data.events.length} · 할 일 {data.todos.length} · 목표 {data.goals.length} ·
+              위시리스트 {data.wishes.length} · 만다라트 {data.mandals.length} · 마인드맵{' '}
+              {data.mindmaps.length} · 과목 {data.subjects.length} · 메모{' '}
               {Object.keys(data.notes).length}
             </p>
           </div>

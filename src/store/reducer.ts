@@ -44,6 +44,11 @@ export type Action =
   | { type: 'TOGGLE_TODO'; id: string }
   | { type: 'UPDATE_TODO'; id: string; patch: Partial<Todo> }
   | { type: 'DELETE_TODO'; id: string }
+  /**
+   * 할 일을 다른 날로 옮깁니다. 여러 개를 한 번에 받는 것은 '전부 오늘로' 때문입니다 —
+   * 하나씩 dispatch 하면 되돌리기가 마지막 한 건만 되살립니다.
+   */
+  | { type: 'MOVE_TODOS'; ids: string[]; date: ISODate }
   | { type: 'ADD_SUBJECT'; name: string; tag: TagColor; weeklyGoalMin: number }
   | { type: 'UPDATE_SUBJECT'; id: string; patch: Partial<Subject> }
   | { type: 'DELETE_SUBJECT'; id: string }
@@ -125,6 +130,33 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
 
     case 'DELETE_TODO':
       return { ...state, todos: state.todos.filter((t) => t.id !== action.id) }
+
+    case 'MOVE_TODOS': {
+      const moving = new Set(action.ids)
+      if (moving.size === 0) return state
+
+      // 옮겨온 것은 그 날의 맨 뒤에 붙습니다. order 를 그대로 두면
+      // 원래 있던 할 일과 번호가 겹쳐 순서가 뒤섞입니다.
+      let next =
+        state.todos
+          .filter((t) => t.date === action.date && !moving.has(t.id))
+          .reduce((max, t) => Math.max(max, t.order), -1) + 1
+
+      const order = new Map<string, number>()
+      // 옮기기 전의 날짜·순서를 유지한 채 번호만 새로 매깁니다.
+      for (const t of state.todos
+        .filter((t) => moving.has(t.id))
+        .sort((a, b) => (a.date === b.date ? a.order - b.order : a.date < b.date ? -1 : 1))) {
+        order.set(t.id, next++)
+      }
+
+      return {
+        ...state,
+        todos: state.todos.map((t) =>
+          moving.has(t.id) ? { ...t, date: action.date, order: order.get(t.id) ?? t.order } : t,
+        ),
+      }
+    }
 
     case 'ADD_SUBJECT': {
       const name = action.name.trim()

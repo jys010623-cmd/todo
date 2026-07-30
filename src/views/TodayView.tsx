@@ -4,7 +4,7 @@ import { InlineEdit } from '@/components/common/InlineEdit'
 import { ProgressBar } from '@/components/common/ProgressBar'
 import { SectionHeader } from '@/components/common/SectionHeader'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { formatDateLong, formatMinutes, formatTime, todayISO } from '@/lib/date'
+import { formatDateLong, formatDateShort, formatMinutes, formatTime, todayISO } from '@/lib/date'
 import { eventToInput, inputToEventPatch, nextTag, parseTimePrefix } from '@/lib/entry'
 import { tagVar } from '@/lib/tag'
 import { usePlanner } from '@/store/PlannerContext'
@@ -15,7 +15,8 @@ import styles from './TodayView.module.css'
  * 다른 뷰와 달리 선택 날짜를 따라가지 않고 항상 '오늘' 에 고정됩니다.
  */
 export function TodayView() {
-  const { eventsByDate, todosByDate, studyMinutesByDate, data, dispatch } = usePlanner()
+  const { eventsByDate, todosByDate, studyMinutesByDate, overdueTodos, data, dispatch } =
+    usePlanner()
 
   const today = todayISO()
   const events = eventsByDate.get(today) ?? []
@@ -107,6 +108,67 @@ export function TodayView() {
           </section>
 
           <section className={styles.col}>
+            {overdueTodos.length > 0 && (
+              <div className={styles.overdue}>
+                <SectionHeader title="지난 할 일" meta={overdueTodos.length} />
+
+                <ul className={styles.todos}>
+                  {overdueTodos.map((t) => (
+                    <li key={t.id} className={styles.todo}>
+                      <Checkbox
+                        checked={t.done}
+                        label={t.title}
+                        onChange={() => dispatch({ type: 'TOGGLE_TODO', id: t.id })}
+                      />
+                      <InlineEdit
+                        value={t.title}
+                        label={t.title}
+                        className={styles.todoTitle}
+                        onCommit={(title) =>
+                          dispatch({ type: 'UPDATE_TODO', id: t.id, patch: { title } })
+                        }
+                      />
+                      <span className={styles.overdueDate}>{formatDateShort(t.date)}</span>
+                      <button
+                        type="button"
+                        className={styles.pull}
+                        aria-label={`${t.title} 오늘로 가져오기`}
+                        onClick={() =>
+                          dispatch({ type: 'MOVE_TODOS', ids: [t.id], date: today })
+                        }
+                      >
+                        오늘로
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.remove}
+                        aria-label={`${t.title} 할 일 삭제`}
+                        onClick={() => dispatch({ type: 'DELETE_TODO', id: t.id })}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                {overdueTodos.length > 1 && (
+                  <button
+                    type="button"
+                    className={styles.pullAll}
+                    onClick={() =>
+                      dispatch({
+                        type: 'MOVE_TODOS',
+                        ids: overdueTodos.map((t) => t.id),
+                        date: today,
+                      })
+                    }
+                  >
+                    {overdueTodos.length}개 전부 오늘로
+                  </button>
+                )}
+              </div>
+            )}
+
             <SectionHeader
               title="할 일"
               meta={todos.length > 0 ? `${doneCount}/${todos.length}` : undefined}

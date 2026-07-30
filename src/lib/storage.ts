@@ -145,12 +145,16 @@ function hash(s: string): number {
   return h
 }
 
-export function loadData(): PlannerData | null {
+/**
+ * JSON.parse 결과를 온전한 상태로 만듭니다.
+ *
+ * 저장된 것을 읽을 때와 파일에서 가져올 때가 같은 길을 타야 합니다.
+ * 가져오기용 검사를 따로 쓰면 둘이 서서히 어긋나고, 그 틈으로 들어온 값이
+ * 저장까지 되어 앱이 열리지 않게 됩니다.
+ */
+export function parseData(raw: unknown): PlannerData | null {
   try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return null
-
-    const parsed = JSON.parse(raw) as Partial<PlannerData> | null
+    const parsed = raw as Partial<PlannerData> | null
     // 버전이 다르면 해석할 수 없으므로 초기 상태로 갑니다.
     if (parsed?.version !== 1) return null
 
@@ -181,6 +185,16 @@ export function loadData(): PlannerData | null {
       mindmaps: asArray(parsed.mindmaps).map(migrateMindMap),
       settings: migrateSettings(parsed.settings),
     }
+  } catch {
+    return null
+  }
+}
+
+export function loadData(): PlannerData | null {
+  try {
+    const raw = localStorage.getItem(KEY)
+    if (!raw) return null
+    return parseData(JSON.parse(raw))
   } catch {
     return null
   }

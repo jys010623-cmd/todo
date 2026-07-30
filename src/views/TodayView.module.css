@@ -141,6 +141,71 @@
   text-decoration-color: var(--text-3);
 }
 
+/* ── 지난 할 일 ────────────────────────────────────────
+ * 오늘 할 일 위에, 옅게 깔린 한 덩어리로 둡니다.
+ * 오늘 목록과 같은 무게로 그리면 무엇을 오늘 하기로 했는지가 흐려집니다. */
+
+.overdue {
+  padding: var(--s3) var(--s4) var(--s2);
+  margin-bottom: var(--s6);
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+}
+
+.overdue .todoTitle {
+  color: var(--text-2);
+}
+
+.overdueDate {
+  flex: none;
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.pull {
+  flex: none;
+  padding: 2px var(--s2);
+  border-radius: var(--r-full);
+  font-size: var(--fs-cap);
+  color: var(--text-2);
+  background: var(--surface-card);
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+
+.todo:hover .pull,
+.pull:focus-visible {
+  opacity: 1;
+}
+
+.pull:hover {
+  color: var(--accent);
+}
+
+.pullAll {
+  display: block;
+  width: 100%;
+  padding: var(--s2) 0 var(--s1);
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  text-align: left;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.pullAll:hover {
+  color: var(--accent);
+}
+
+/* 손가락에는 hover 가 없어 늘 보여 줍니다. */
+@media (hover: none) {
+  .pull {
+    opacity: 1;
+  }
+}
+
 /* ── 메모 ─────────────────────────────────────────────── */
 
 .noteBlock {

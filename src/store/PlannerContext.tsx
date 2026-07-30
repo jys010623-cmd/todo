@@ -16,6 +16,36 @@ import type { ISODate, PlanEvent, PlannerData, Subject, Todo, ViewId } from '@/t
 import { createInitialData } from './initial'
 import { reducer, type Action } from './reducer'
 
+/**
+ * 되돌릴 수 있게 해 둘 동작들.
+ *
+ * 삭제 버튼은 전부 × 하나라 손이 미끄러지기 쉽고, 만다라트 81칸이나 마인드맵 가지처럼
+ * 한 번에 많이 사라지는 것도 있습니다. 지울 때마다 묻는 대신 되돌릴 수 있게 했습니다 —
+ * 이 앱은 모달을 쓰지 않고, 확인 창은 결국 습관적으로 넘기게 됩니다.
+ */
+const UNDOABLE: Partial<Record<Action['type'], string>> = {
+  DELETE_EVENT: '일정을 지웠습니다',
+  DELETE_TODO: '할 일을 지웠습니다',
+  DELETE_SUBJECT: '과목을 지웠습니다',
+  DELETE_GOAL: '목표를 지웠습니다',
+  DELETE_GOAL_STEP: '단계를 지웠습니다',
+  DELETE_WISH: '위시리스트 항목을 지웠습니다',
+  DELETE_MANDAL: '만다라트를 지웠습니다',
+  DELETE_MINDMAP: '마인드맵을 지웠습니다',
+  DELETE_MIND_NODE: '가지를 지웠습니다',
+  MOVE_TODOS: '할 일을 옮겼습니다',
+  REPLACE: '기록을 바꿨습니다',
+}
+
+/** 사라진 줄 모르고 지나칠 만큼 짧지 않게, 방해되지 않을 만큼 길지 않게. */
+const UNDO_MS = 8000
+
+export interface UndoState {
+  /** 동작 직전의 상태 전체 */
+  data: PlannerData
+  label: string
+}
+
 interface PlannerContextValue {
   data: PlannerData
   dispatch: Dispatch<Action>
@@ -35,6 +65,14 @@ interface PlannerContextValue {
   todosByDate: Map<ISODate, Todo[]>
   studyMinutesByDate: Map<ISODate, number>
   subjectById: Map<string, Subject>
+
+  /** 오늘 이전에 적혔는데 아직 안 끝난 할 일 — 오래된 것부터 */
+  overdueTodos: Todo[]
+
+  /** 되돌릴 것이 없으면 null */
+  undoState: UndoState | null
+  undo: () => void
+  dismissUndo: () => void
 }
 
 const PlannerContext = createContext<PlannerContextValue | null>(null)
@@ -44,7 +82,7 @@ function init(): PlannerData {
 }
 
 export function PlannerProvider({ children }: { children: ReactNode }) {
-  const [data, dispatch] = useReducer(reducer, undefined, init)
+  const [data, rawDispatch] = useReducer(reducer, undefined, init)
 
   const [view, setView] = useState<ViewId>('month')
   const [selectedDate, setSelectedDate] = useState<ISODate>(todayISO)
@@ -70,6 +108,47 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     },
     [],
   )
+
+  // ── 되돌리기 ────────────────────────────────────────────
+  const [undoState, setUndoState] = useState<UndoState | null>(null)
+  const undoTimer = useRef<number | undefined>(undefined)
+
+  // dispatch 를 memo 로 감싸도 스냅샷은 늘 최신이어야 해서 ref 로 들고 있습니다.
+  const latest = useRef(data)
+  latest.current = data
+
+  // 되돌릴 때 setState 업데이터 안에서 dispatch 하면 StrictMode 에서 두 번 실행됩니다.
+  const pending = useRef<UndoState | null>(null)
+
+  const helpers = useMemo(() => {
+    const clearTimer = () => window.clearTimeout(undoTimer.current)
+
+    const remember = (next: UndoState | null) => {
+      pending.current = next
+      setUndoState(next)
+      clearTimer()
+      if (next) undoTimer.current = window.setTimeout(() => remember(null), UNDO_MS)
+    }
+
+    return {
+      dispatch: (action: Action) => {
+        const label = UNDOABLE[action.type]
+        if (label) remember({ data: latest.current, label })
+        rawDispatch(action)
+      },
+      undo: () => {
+        const snapshot = pending.current
+        // 되돌리기 자체가 또 되돌릴 거리를 만들지 않도록 원래 dispatch 를 씁니다.
+        if (snapshot) rawDispatch({ type: 'REPLACE', data: snapshot.data })
+        remember(null)
+      },
+      dismissUndo: () => remember(null),
+      clearTimer,
+    }
+  }, [])
+
+  const { dispatch, undo, dismissUndo } = helpers
+  useEffect(() => helpers.clearTimer, [helpers])
 
   const eventsByDate = useMemo(() => {
     const map = new Map<ISODate, PlanEvent[]>()
@@ -114,6 +193,18 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [data.subjects],
   )
 
+  /**
+   * 지난 날짜의 안 끝난 할 일.
+   * 이게 없으면 하루가 지나는 순간 어느 화면에도 나오지 않아, 달력을 거슬러 올라가야만
+   * 다시 만납니다. 'YYYY-MM-DD' 는 사전순이 곧 날짜순이라 그대로 비교합니다.
+   */
+  const overdueTodos = useMemo(() => {
+    const today = todayISO()
+    return data.todos
+      .filter((t) => !t.done && t.date < today)
+      .sort((a, b) => (a.date === b.date ? a.order - b.order : a.date < b.date ? -1 : 1))
+  }, [data.todos])
+
   const value: PlannerContextValue = {
     data,
     dispatch,
@@ -127,6 +218,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     todosByDate,
     studyMinutesByDate,
     subjectById,
+    overdueTodos,
+    undoState,
+    undo,
+    dismissUndo,
   }
 
   return <PlannerContext.Provider value={value}>{children}</PlannerContext.Provider>

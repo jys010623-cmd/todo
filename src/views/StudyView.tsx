@@ -18,6 +18,39 @@ const STEPS = [10, 30, 60]
 const DEFAULT_GOAL_MIN = 300
 const GOAL_STEP = 30
 
+/**
+ * 단계가 바뀔 때의 짧은 신호음.
+ *
+ * 화면을 안 보고 있을 때 알아채려면 소리가 필요한데, 음원 파일을 받아 두면
+ * 첫 로딩만 무거워집니다. 두 음이면 충분해서 그 자리에서 만들어 냅니다.
+ * 소리를 막아 둔 브라우저에서는 조용히 넘어갑니다.
+ */
+function beep() {
+  try {
+    const Ctor = window.AudioContext ?? (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    if (!Ctor) return
+    const ctx = new Ctor()
+    const gain = ctx.createGain()
+    gain.connect(ctx.destination)
+    // 뚝 끊기면 '틱' 하고 튑니다 — 부드럽게 올렸다 내립니다.
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5)
+
+    for (const [freq, at] of [[880, 0], [1320, 0.16]] as const) {
+      const osc = ctx.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      osc.connect(gain)
+      osc.start(ctx.currentTime + at)
+      osc.stop(ctx.currentTime + at + 0.14)
+    }
+    window.setTimeout(() => void ctx.close(), 900)
+  } catch {
+    /* 소리는 덤입니다 — 안 나도 타이머는 돕니다 */
+  }
+}
+
 /** 흘러간 시간을 '1:23:45' / '23:45' 로 */
 function clock(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000))
@@ -51,11 +84,44 @@ export function StudyView() {
   /** 기록은 분 단위라 반올림합니다. 30초 미만은 0분이 되어 쌓이지 않습니다. */
   const elapsedMin = Math.round(elapsedMs / 60_000)
 
+  const { pomodoro } = settings
+  /** 뽀모도로면 남은 시간, 아니면 흘러간 시간 */
+  const shownMs = timer?.lengthMin ? Math.max(0, timer.lengthMin * 60_000 - elapsedMs) : elapsedMs
+
   const startTimer = (subjectId: string) => {
     // 이미 돌고 있던 것은 먼저 기록하고 넘어갑니다 — 재던 시간이 그냥 사라지면 안 됩니다.
     if (timer) dispatch({ type: 'STOP_TIMER', date: today, minutes: elapsedMin })
-    dispatch({ type: 'START_TIMER', subjectId, startedAt: Date.now() })
+    dispatch({
+      type: 'START_TIMER',
+      subjectId,
+      startedAt: Date.now(),
+      lengthMin: pomodoro.enabled ? pomodoro.focusMin : undefined,
+    })
   }
+
+  /**
+   * 한 단계가 끝나면 기록하고 곧바로 다음 단계로 넘어갑니다.
+   *
+   * 다 되었는지 재는 것도, 넘기는 것도 화면이 합니다 — 리듀서가 시계를 읽으면
+   * 같은 입력에 다른 결과가 나옵니다.
+   */
+  useEffect(() => {
+    if (!timer?.lengthMin) return
+    if (elapsedMs < timer.lengthMin * 60_000) return
+
+    const resting = !timer.resting
+    dispatch({
+      type: 'STOP_TIMER',
+      date: today,
+      minutes: timer.resting ? 0 : timer.lengthMin,
+      next: {
+        startedAt: Date.now(),
+        lengthMin: resting ? pomodoro.breakMin : pomodoro.focusMin,
+        resting,
+      },
+    })
+    beep()
+  }, [timer, elapsedMs, today, pomodoro.breakMin, pomodoro.focusMin, dispatch])
   const week = useMemo(() => weekDays(today, settings.weekStart), [today, settings.weekStart])
 
   /** 과목별로 이번 주 누적과 오늘 기록을 한 번에 집계합니다. */
@@ -159,18 +225,28 @@ export function StudyView() {
                       <div className={styles.steps}>
                         {running ? (
                           <>
-                            <span className={styles.clock} role="timer" aria-live="off">
-                              {clock(elapsedMs)}
+                            <span
+                              className={styles.clock}
+                              data-resting={timer?.resting || undefined}
+                              role="timer"
+                              aria-live="off"
+                            >
+                              {clock(shownMs)}
                             </span>
+                            {timer?.resting && <span className={styles.phase}>쉬는 중</span>}
                             <button
                               type="button"
                               className={styles.stop}
                               onClick={() =>
-                                dispatch({ type: 'STOP_TIMER', date: today, minutes: elapsedMin })
+                                dispatch({
+                                  type: 'STOP_TIMER',
+                                  date: today,
+                                  minutes: timer?.resting ? 0 : elapsedMin,
+                                })
                               }
                             >
                               정지
-                              {elapsedMin > 0 && (
+                              {!timer?.resting && elapsedMin > 0 && (
                                 <span className={styles.stopHint}> · {elapsedMin}분 기록</span>
                               )}
                             </button>

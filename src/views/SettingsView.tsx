@@ -19,6 +19,41 @@ const ACCENTS: { value: string; label: string }[] = [
   { value: '#31322e', label: '잉크' },
 ]
 
+interface StepperProps {
+  label: string
+  value: number
+  step: number
+  min: number
+  max: number
+  onChange: (value: number) => void
+}
+
+/** 스터디 화면의 주간 목표와 같은 방식 — 숫자를 직접 치게 하지 않습니다. */
+function Stepper({ label, value, step, min, max, onChange }: StepperProps) {
+  return (
+    <div className={styles.stepper}>
+      <span className={styles.stepperLabel}>{label}</span>
+      <button
+        type="button"
+        className={styles.stepperBtn}
+        aria-label={`${label} ${step}분 줄이기`}
+        onClick={() => onChange(Math.max(min, value - step))}
+      >
+        −
+      </button>
+      <span className={styles.stepperValue}>{value}분</span>
+      <button
+        type="button"
+        className={styles.stepperBtn}
+        aria-label={`${label} ${step}분 늘리기`}
+        onClick={() => onChange(Math.min(max, value + step))}
+      >
+        +
+      </button>
+    </div>
+  )
+}
+
 export function SettingsView() {
   const { data, dispatch } = usePlanner()
   const { settings } = data
@@ -146,6 +181,69 @@ export function SettingsView() {
             onChange={(v) => dispatch({ type: 'SET_SETTINGS', patch: { hour12: v === 'h12' } })}
           />
         </section>
+
+        <section className={styles.row}>
+          <div className={styles.label}>
+            <h2 className={styles.labelTitle}>뽀모도로</h2>
+            <p className={styles.labelBody}>
+              켜면 스터디 타이머가 정해진 시간만큼 세다가 저절로 쉬는 시간으로 넘어갑니다.
+              집중한 만큼은 그때 기록되고, 쉬는 동안은 세지 않습니다.
+            </p>
+          </div>
+          <div className={styles.actions}>
+            <Segmented
+              label="뽀모도로"
+              value={settings.pomodoro.enabled ? 'on' : 'off'}
+              options={[
+                { value: 'off', label: '끄기' },
+                { value: 'on', label: '켜기' },
+              ]}
+              onChange={(v) =>
+                dispatch({
+                  type: 'SET_SETTINGS',
+                  patch: { pomodoro: { ...settings.pomodoro, enabled: v === 'on' } },
+                })
+              }
+            />
+          </div>
+        </section>
+
+        {settings.pomodoro.enabled && (
+          <section className={styles.row}>
+            <div className={styles.label}>
+              <h2 className={styles.labelTitle}>집중과 휴식</h2>
+              <p className={styles.labelBody}>한 번에 얼마나 집중하고 얼마나 쉴지.</p>
+            </div>
+            <div className={styles.actions}>
+              <Stepper
+                label="집중"
+                value={settings.pomodoro.focusMin}
+                step={5}
+                min={5}
+                max={90}
+                onChange={(focusMin) =>
+                  dispatch({
+                    type: 'SET_SETTINGS',
+                    patch: { pomodoro: { ...settings.pomodoro, focusMin } },
+                  })
+                }
+              />
+              <Stepper
+                label="휴식"
+                value={settings.pomodoro.breakMin}
+                step={1}
+                min={1}
+                max={30}
+                onChange={(breakMin) =>
+                  dispatch({
+                    type: 'SET_SETTINGS',
+                    patch: { pomodoro: { ...settings.pomodoro, breakMin } },
+                  })
+                }
+              />
+            </div>
+          </section>
+        )}
 
         <section className={styles.row}>
           <div className={styles.label}>

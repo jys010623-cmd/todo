@@ -50,6 +50,20 @@ export interface StudyTimer {
   subjectId: string
   /** epoch ms */
   startedAt: number
+  /**
+   * 뽀모도로로 켰다면 이 단계의 길이(분).
+   * 없으면 끝없이 흐르는 보통 타이머입니다.
+   */
+  lengthMin?: number
+  /** 쉬는 중이면 공부 시간으로 세지 않습니다. */
+  resting?: boolean
+}
+
+/** 뽀모도로 — 끄면 타이머는 끝없이 흐릅니다. */
+export interface Pomodoro {
+  enabled: boolean
+  focusMin: number
+  breakMin: number
 }
 
 /** 목표는 '언제까지'가 있는 것과 '언젠가'로 미뤄둔 것으로 나뉩니다. */
@@ -167,6 +181,7 @@ export interface Settings {
   /** --accent-base 로 주입되는 HEX */
   accent: string
   theme: ThemeMode
+  pomodoro: Pomodoro
   /** 0 = 일요일 시작, 1 = 월요일 시작 */
   weekStart: 0 | 1
   hour12: boolean

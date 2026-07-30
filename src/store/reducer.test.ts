@@ -350,6 +350,39 @@ describe('스터디 타이머', () => {
     expect(reducer(s, { type: 'DELETE_SUBJECT', id: 's2' }).timer?.subjectId).toBe('s1')
   })
 
+  it('뽀모도로: 집중이 끝나면 기록하고 쉬는 단계로 이어진다', () => {
+    let s = reducer(withSubjects(), { type: 'START_TIMER', subjectId: 's1', startedAt: 1000, lengthMin: 25 })
+    s = reducer(s, {
+      type: 'STOP_TIMER', date: D, minutes: 25,
+      next: { startedAt: 2000, lengthMin: 5, resting: true },
+    })
+    expect(minutesOf(s, 's1')).toBe(25)
+    expect(s.timer).toEqual({ subjectId: 's1', startedAt: 2000, lengthMin: 5, resting: true })
+  })
+
+  it('뽀모도로: 쉰 시간은 공부로 세지 않는다', () => {
+    let s = reducer(withSubjects(), { type: 'START_TIMER', subjectId: 's1', startedAt: 1000, lengthMin: 5, resting: true })
+    s = reducer(s, {
+      type: 'STOP_TIMER', date: D, minutes: 5,
+      next: { startedAt: 2000, lengthMin: 25, resting: false },
+    })
+    expect(minutesOf(s, 's1')).toBe(0)
+    expect(s.timer?.resting).toBeUndefined()
+    expect(s.timer?.lengthMin).toBe(25)
+  })
+
+  it('쉬는 중에 손으로 멈추면 아무것도 안 쌓인다', () => {
+    let s = reducer(withSubjects(), { type: 'START_TIMER', subjectId: 's1', startedAt: 1000, lengthMin: 5, resting: true })
+    s = reducer(s, { type: 'STOP_TIMER', date: D, minutes: 5 })
+    expect(minutesOf(s, 's1')).toBe(0)
+    expect(s.timer).toBeUndefined()
+  })
+
+  it('보통 타이머는 길이가 없다', () => {
+    const s = reducer(withSubjects(), { type: 'START_TIMER', subjectId: 's1', startedAt: 1000 })
+    expect(s.timer?.lengthMin).toBeUndefined()
+  })
+
   it('안 돌고 있을 때 정지해도 안전하다', () => {
     const s = reducer(withSubjects(), { type: 'STOP_TIMER', date: D, minutes: 30 })
     expect(s.studyLogs).toHaveLength(0)

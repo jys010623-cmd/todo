@@ -189,6 +189,7 @@ describe('설정 — 한 항목이 비어도 나머지가 살아야 한다', () 
     expect(parse({ settings: { accent: '#2b9a66', weekStart: 0, hour12: true } }).settings).toEqual({
       accent: '#2b9a66',
       theme: 'system',
+      pomodoro: { enabled: false, focusMin: 25, breakMin: 5 },
       weekStart: 0,
       hour12: true,
     })
@@ -210,7 +211,43 @@ describe('설정 — 한 항목이 비어도 나머지가 살아야 한다', () 
     expect(s.theme).toBe('system')
     expect(s.weekStart).toBe(1)
     expect(typeof s.accent).toBe('string')
+    expect(s.pomodoro).toEqual({ enabled: false, focusMin: 25, breakMin: 5 })
   })
+
+  it('뽀모도로 길이를 지킨다', () => {
+    expect(parse({ settings: { pomodoro: { enabled: true, focusMin: 50, breakMin: 10 } } }).settings.pomodoro)
+      .toEqual({ enabled: true, focusMin: 50, breakMin: 10 })
+  })
+
+  it.each([
+    ['0분', 0, 1],
+    ['음수', -5, 1],
+    ['지나치게 김', 9999, 180],
+    ['소수', 25.7, 26],
+    ['NaN', NaN, 25],
+    ['문자열', '스물다섯', 25],
+  ])('집중 길이가 %s 이면 잡아 준다 — 0 이하면 켜자마자 끝나 무한히 넘어갑니다', (_n, focusMin, want) => {
+    expect(parse({ settings: { pomodoro: { focusMin } } }).settings.pomodoro.focusMin).toBe(want)
+  })
+})
+
+describe('타이머 단계 — 되살릴 수 없는 값은 버린다', () => {
+  const subjects = [{ id: 's1', name: '수학', tag: 'blue', weeklyGoalMin: 600 }]
+
+  it('뽀모도로 단계가 그대로 살아난다', () => {
+    const startedAt = Date.now() - 60_000
+    const d = parse({ subjects, timer: { subjectId: 's1', startedAt, lengthMin: 25, resting: true } })
+    expect(d.timer).toEqual({ subjectId: 's1', startedAt, lengthMin: 25, resting: true })
+  })
+
+  it.each([['0', 0], ['음수', -10], ['NaN', NaN], ['문자열', '길이']])(
+    '단계 길이가 %s 이면 보통 타이머로 — 남은 시간이 늘 음수가 됩니다',
+    (_n, lengthMin) => {
+      const d = parse({ subjects, timer: { subjectId: 's1', startedAt: Date.now() - 1000, lengthMin } })
+      expect(d.timer?.lengthMin).toBeUndefined()
+      expect(d.timer?.subjectId).toBe('s1')
+    },
+  )
 })
 
 describe('백업 왕복 — 내보낸 그대로 돌아와야 한다', () => {
@@ -234,6 +271,12 @@ describe('백업 왕복 — 내보낸 그대로 돌아와야 한다', () => {
     expect(back.goals[0].steps).toHaveLength(1)
     expect(back.mandals[0].actions).toHaveLength(8)
     expect(back.mindmaps[0].nodes).toHaveLength(1)
-    expect(back.settings).toEqual({ accent: '#2b9a66', theme: 'dark', weekStart: 0, hour12: true })
+    expect(back.settings).toEqual({
+      accent: '#2b9a66',
+      theme: 'dark',
+      pomodoro: { enabled: false, focusMin: 25, breakMin: 5 },
+      weekStart: 0,
+      hour12: true,
+    })
   })
 })

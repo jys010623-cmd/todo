@@ -82,9 +82,24 @@ export type Action =
   /** minutes 는 증분입니다. 같은 날짜+과목 로그는 하나로 합쳐집니다. */
   | { type: 'LOG_STUDY'; date: ISODate; subjectId: string; minutes: number }
   /** startedAt 은 호출부가 넘깁니다 — 리듀서가 시계를 읽으면 같은 입력에 다른 결과가 나옵니다. */
-  | { type: 'START_TIMER'; subjectId: string; startedAt: number }
-  /** 흘러간 시간은 화면이 재서 넘깁니다. 멈추는 것과 기록하는 것은 한 동작입니다. */
-  | { type: 'STOP_TIMER'; date: ISODate; minutes: number }
+  | {
+      type: 'START_TIMER'
+      subjectId: string
+      startedAt: number
+      /** 뽀모도로면 이 단계의 길이(분) */
+      lengthMin?: number
+      resting?: boolean
+    }
+  /**
+   * 흘러간 시간은 화면이 재서 넘깁니다. 멈추는 것과 기록하는 것은 한 동작입니다.
+   * next 가 있으면 기록하고 곧바로 다음 단계로 넘어갑니다(뽀모도로).
+   */
+  | {
+      type: 'STOP_TIMER'
+      date: ISODate
+      minutes: number
+      next?: { startedAt: number; lengthMin: number; resting: boolean }
+    }
   | { type: 'CANCEL_TIMER' }
   | { type: 'SET_NOTE'; date: ISODate; text: string }
   | { type: 'ADD_GOAL'; title: string; tag: TagColor }
@@ -240,7 +255,15 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
 
     case 'START_TIMER': {
       if (!state.subjects.some((s) => s.id === action.subjectId)) return state
-      return { ...state, timer: { subjectId: action.subjectId, startedAt: action.startedAt } }
+      return {
+        ...state,
+        timer: {
+          subjectId: action.subjectId,
+          startedAt: action.startedAt,
+          lengthMin: action.lengthMin,
+          resting: action.resting,
+        },
+      }
     }
 
     case 'STOP_TIMER': {
@@ -248,7 +271,25 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
       if (!timer) return state
       // 재는 것과 기록하는 것이 한 번에 일어나야 합니다. 나눠 두면 그 사이에
       // 새로고침되었을 때 시간만 사라집니다.
-      const next = addStudyMinutes(state, action.date, timer.subjectId, action.minutes)
+      // 쉬는 동안 흐른 시간은 공부한 것이 아닙니다.
+      const next = timer.resting
+        ? state
+        : addStudyMinutes(state, action.date, timer.subjectId, action.minutes)
+
+      // 다음 단계로 넘어가는 중이면 멈추지 않고 이어 갑니다.
+      if (action.next) {
+        return {
+          ...next,
+          timer: {
+            subjectId: timer.subjectId,
+            startedAt: action.next.startedAt,
+            lengthMin: action.next.lengthMin,
+            // 저장할 때 false 는 지워지므로 여기서도 안 들고 있습니다 —
+            // 새로고침 전후로 모양이 달라지면 비교가 어긋납니다.
+            resting: action.next.resting || undefined,
+          },
+        }
+      }
       return { ...next, timer: undefined }
     }
 

@@ -202,6 +202,17 @@
   color: var(--accent);
 }
 
+/* 쉬는 중에는 색을 빼서, 지금 공부가 세지지 않는다는 걸 눈으로 알립니다. */
+.clock[data-resting] {
+  color: var(--text-2);
+}
+
+.phase {
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
 .clock {
   font-size: var(--fs-body);
   font-weight: var(--fw-semibold);

@@ -9,6 +9,7 @@ import {
   type MindMap,
   type MindNode,
   type PlannerData,
+  type Pomodoro,
   type Settings,
   type StudyTimer,
   type Subject,
@@ -74,6 +75,7 @@ function migrateSettings(raw: unknown): Settings {
     accent: LEGACY_ACCENTS.has(accent.toLowerCase()) ? DEFAULT_SETTINGS.accent : accent,
     // 테마가 없던 시절 데이터도 있습니다.
     theme: THEME_MODES.includes(s.theme as ThemeMode) ? (s.theme as ThemeMode) : DEFAULT_SETTINGS.theme,
+    pomodoro: migratePomodoro(s.pomodoro),
     weekStart: s.weekStart === 0 || s.weekStart === 1 ? s.weekStart : DEFAULT_SETTINGS.weekStart,
     hour12: typeof s.hour12 === 'boolean' ? s.hour12 : DEFAULT_SETTINGS.hour12,
   }
@@ -164,6 +166,25 @@ function migrateMindMap(raw: unknown): MindMap {
 }
 
 /**
+ * 길이가 0 이하이면 타이머가 켜자마자 끝나 무한히 넘어갑니다.
+ * 지나치게 길어도 쓸모가 없어 위아래를 막아 둡니다.
+ */
+function minutesIn(value: unknown, fallback: number, max: number): number {
+  const n = finite(value)
+  if (n === undefined) return fallback
+  return Math.min(Math.max(Math.round(n), 1), max)
+}
+
+function migratePomodoro(raw: unknown): Pomodoro {
+  const p = (raw ?? {}) as Partial<Pomodoro>
+  return {
+    enabled: p.enabled === true,
+    focusMin: minutesIn(p.focusMin, DEFAULT_SETTINGS.pomodoro.focusMin, 180),
+    breakMin: minutesIn(p.breakMin, DEFAULT_SETTINGS.pomodoro.breakMin, 60),
+  }
+}
+
+/**
  * 돌던 타이머는 새로고침해도 이어져야 합니다.
  * 다만 시작 시각이 깨졌거나 과목이 사라졌으면 멈출 수도 기록할 수도 없으니 버립니다.
  * 미래에서 시작한 것으로 되어 있으면 흘러간 시간이 음수가 되어 그것도 버립니다.
@@ -178,7 +199,14 @@ function migrateTimer(raw: unknown, subjects: Subject[]): StudyTimer | undefined
   const subjectId = asText(t.subjectId)
   if (!subjectId || !subjects.some((s) => s.id === subjectId)) return undefined
 
-  return { subjectId, startedAt }
+  const lengthMin = finite(t.lengthMin)
+  return {
+    subjectId,
+    startedAt,
+    // 0 이하이면 남은 시간이 늘 음수가 되어 화면이 멈춘 것처럼 보입니다.
+    lengthMin: lengthMin !== undefined && lengthMin > 0 ? Math.round(lengthMin) : undefined,
+    resting: t.resting === true ? true : undefined,
+  }
 }
 
 /** id 가 비어 있을 때만 쓰는 결정적 대체값 — 새로고침해도 같은 값이 나옵니다. */

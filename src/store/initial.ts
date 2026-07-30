@@ -5,6 +5,8 @@ export const DEFAULT_SETTINGS: Settings = {
   accent: '#6e56cf',
   // 처음에는 기기 설정을 따릅니다 — 고르라고 묻기 전에 이미 맞아 있는 편이 낫습니다.
   theme: 'system',
+  // 25분 집중 / 5분 휴식 — 처음 제안된 그대로가 가장 널리 쓰입니다.
+  pomodoro: { enabled: false, focusMin: 25, breakMin: 5 },
   weekStart: 1,
   hour12: false,
 }

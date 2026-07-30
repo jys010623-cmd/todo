@@ -1,8 +1,11 @@
 import { uid } from '@/lib/id'
+import { descendantIds, findRoot } from '@/lib/mindmap'
 import type {
   Goal,
   ISODate,
   Mandal,
+  MindMap,
+  MindNode,
   PlanEvent,
   PlannerData,
   Settings,
@@ -21,6 +24,15 @@ function emptyMandal(title: string): Mandal {
     core: '',
     subGoals: Array.from({ length: 8 }, () => ''),
     actions: Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => '')),
+  }
+}
+
+/** 마인드맵은 언제나 루트 하나로 시작합니다 — 가운데가 없으면 그릴 것이 없습니다. */
+function emptyMindMap(title: string): MindMap {
+  return {
+    id: uid('mm'),
+    title,
+    nodes: [{ id: uid('mn'), text: title, order: 0 }],
   }
 }
 
@@ -54,6 +66,14 @@ export type Action =
   | { type: 'DELETE_MANDAL'; id: string }
   /** 만다라트의 한 칸. sub 가 없으면 핵심, action 이 없으면 세부 목표입니다. */
   | { type: 'SET_MANDAL_CELL'; id: string; sub?: number; action?: number; text: string }
+  | { type: 'ADD_MINDMAP'; title: string }
+  | { type: 'UPDATE_MINDMAP'; id: string; patch: Partial<Omit<MindMap, 'nodes'>> }
+  | { type: 'DELETE_MINDMAP'; id: string }
+  | { type: 'ADD_MIND_NODE'; mapId: string; parentId: string; text: string }
+  | { type: 'UPDATE_MIND_NODE'; mapId: string; nodeId: string; patch: Partial<MindNode> }
+  /** 노드를 지우면 그 아래 가지도 함께 사라집니다. 루트는 지울 수 없습니다. */
+  | { type: 'DELETE_MIND_NODE'; mapId: string; nodeId: string }
+  | { type: 'TOGGLE_MIND_NODE'; mapId: string; nodeId: string }
   | { type: 'SET_SETTINGS'; patch: Partial<Settings> }
   | { type: 'REPLACE'; data: PlannerData }
 
@@ -296,6 +316,88 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
         }),
       }
     }
+
+    case 'ADD_MINDMAP': {
+      const title = action.title.trim()
+      if (!title) return state
+      return { ...state, mindmaps: [...state.mindmaps, emptyMindMap(title)] }
+    }
+
+    case 'UPDATE_MINDMAP':
+      return {
+        ...state,
+        mindmaps: state.mindmaps.map((m) => (m.id === action.id ? { ...m, ...action.patch } : m)),
+      }
+
+    case 'DELETE_MINDMAP':
+      return { ...state, mindmaps: state.mindmaps.filter((m) => m.id !== action.id) }
+
+    case 'ADD_MIND_NODE': {
+      const text = action.text.trim()
+      if (!text) return state
+      return {
+        ...state,
+        mindmaps: state.mindmaps.map((m) => {
+          if (m.id !== action.mapId) return m
+          if (!m.nodes.some((n) => n.id === action.parentId)) return m
+
+          const order =
+            m.nodes
+              .filter((n) => n.parentId === action.parentId)
+              .reduce((max, n) => Math.max(max, n.order), -1) + 1
+
+          const node: MindNode = { id: uid('mn'), text, parentId: action.parentId, order }
+          // 접힌 부모에 자식을 붙이면 방금 쓴 것이 보이지 않아, 함께 펼칩니다.
+          const nodes = m.nodes.map((n) =>
+            n.id === action.parentId && n.collapsed ? { ...n, collapsed: false } : n,
+          )
+          return { ...m, nodes: [...nodes, node] }
+        }),
+      }
+    }
+
+    case 'UPDATE_MIND_NODE':
+      return {
+        ...state,
+        mindmaps: state.mindmaps.map((m) =>
+          m.id === action.mapId
+            ? {
+                ...m,
+                nodes: m.nodes.map((n) =>
+                  n.id === action.nodeId ? { ...n, ...action.patch } : n,
+                ),
+              }
+            : m,
+        ),
+      }
+
+    case 'DELETE_MIND_NODE':
+      return {
+        ...state,
+        mindmaps: state.mindmaps.map((m) => {
+          if (m.id !== action.mapId) return m
+          // 루트를 지우면 나머지가 전부 미아가 됩니다 — 맵 자체를 지우는 것이 그 자리의 일입니다.
+          if (findRoot(m.nodes)?.id === action.nodeId) return m
+
+          const doomed = new Set([action.nodeId, ...descendantIds(m.nodes, action.nodeId)])
+          return { ...m, nodes: m.nodes.filter((n) => !doomed.has(n.id)) }
+        }),
+      }
+
+    case 'TOGGLE_MIND_NODE':
+      return {
+        ...state,
+        mindmaps: state.mindmaps.map((m) =>
+          m.id === action.mapId
+            ? {
+                ...m,
+                nodes: m.nodes.map((n) =>
+                  n.id === action.nodeId ? { ...n, collapsed: !n.collapsed } : n,
+                ),
+              }
+            : m,
+        ),
+      }
 
     case 'SET_SETTINGS':
       return { ...state, settings: { ...state.settings, ...action.patch } }

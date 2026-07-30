@@ -23,5 +23,6 @@ export function createInitialData(): PlannerData {
     goals: [],
     wishes: [],
     mandals: [],
+    mindmaps: [],
   }
 }

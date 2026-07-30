@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { Segmented } from '@/components/common/Segmented'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { createInitialData } from '@/store/initial'
 import { usePlanner } from '@/store/PlannerContext'
 import type { PlannerData } from '@/types'
 import styles from './SettingsView.module.css'
@@ -29,18 +30,8 @@ export function SettingsView() {
       return
     }
     // 설정은 취향이라 남기고, 기록만 비웁니다.
-    const next: PlannerData = {
-      version: 1,
-      events: [],
-      todos: [],
-      subjects: [],
-      studyLogs: [],
-      notes: {},
-      goals: [],
-      wishes: [],
-      mandals: [],
-      settings,
-    }
+    // 빈 상태를 여기서 다시 적으면 영역이 늘 때마다 빠뜨리게 되어 초기값을 그대로 씁니다.
+    const next: PlannerData = { ...createInitialData(), settings }
     dispatch({ type: 'REPLACE', data: next })
     setConfirming(false)
   }

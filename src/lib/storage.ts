@@ -3,6 +3,8 @@ import {
   TAG_COLORS,
   type Goal,
   type Mandal,
+  type MindMap,
+  type MindNode,
   type PlannerData,
   type Settings,
   type TagColor,
@@ -83,6 +85,59 @@ function migrateMandal(raw: unknown): Mandal {
   }
 }
 
+/**
+ * 마인드맵은 부모를 id 로 가리키기 때문에, 한 군데만 깨져도 화면에서 통째로 사라지거나
+ * 배치가 무한히 돕니다. 읽는 시점에 '루트 하나로 모두 이어진 트리'로 만들어 둡니다.
+ */
+function migrateMindMap(raw: unknown): MindMap {
+  const m = (raw ?? {}) as Partial<MindMap>
+  const title = asText(m.title) || '제목 없음'
+  const id = asText(m.id) || `mm_${Math.abs(hash(JSON.stringify(raw)))}`
+
+  const cleaned: MindNode[] = asArray<Partial<MindNode>>(m.nodes)
+    .filter((n) => typeof n?.id === 'string' && n.id)
+    .map((n, i) => ({
+      id: n.id as string,
+      text: asText(n.text),
+      parentId: typeof n.parentId === 'string' ? n.parentId : undefined,
+      order: typeof n.order === 'number' && Number.isFinite(n.order) ? n.order : i,
+      collapsed: n.collapsed === true ? true : undefined,
+    }))
+
+  // 같은 id 가 둘 있으면 뒤엣것이 앞엣것의 부모로 잡히는 등 트리가 뒤틀립니다.
+  const unique = new Map<string, MindNode>()
+  for (const n of cleaned) if (!unique.has(n.id)) unique.set(n.id, n)
+  const nodes = [...unique.values()]
+
+  if (nodes.length === 0) {
+    return { id, title, nodes: [{ id: `${id}_root`, text: title, order: 0 }] }
+  }
+
+  // 루트는 하나여야 합니다. 없으면 첫 노드를 루트로 세웁니다.
+  const root = nodes.find((n) => !n.parentId) ?? nodes[0]
+  root.parentId = undefined
+
+  /** 조상을 따라 올라가 루트에 닿는지 봅니다 — 못 닿으면 미아이거나 순환입니다. */
+  const reaches = (start: MindNode): boolean => {
+    const seen = new Set<string>([start.id])
+    let current = start
+    while (current.parentId) {
+      const parent = unique.get(current.parentId)
+      if (!parent || seen.has(parent.id)) return false
+      if (parent.id === root.id) return true
+      seen.add(parent.id)
+      current = parent
+    }
+    return current.id === root.id
+  }
+
+  for (const n of nodes) {
+    if (n.id !== root.id && !reaches(n)) n.parentId = root.id
+  }
+
+  return { id, title, nodes }
+}
+
 /** id 가 비어 있을 때만 쓰는 결정적 대체값 — 새로고침해도 같은 값이 나옵니다. */
 function hash(s: string): number {
   let h = 0
@@ -123,6 +178,7 @@ export function loadData(): PlannerData | null {
       })),
       wishes: asArray(parsed.wishes),
       mandals: asArray(parsed.mandals).map(migrateMandal),
+      mindmaps: asArray(parsed.mindmaps).map(migrateMindMap),
       settings: migrateSettings(parsed.settings),
     }
   } catch {

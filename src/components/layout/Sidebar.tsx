@@ -9,6 +9,7 @@ const NAV: { id: ViewId; label: string }[] = [
   { id: 'month', label: 'Month' },
   { id: 'goals', label: 'Goals' },
   { id: 'mandal', label: 'Mandal' },
+  { id: 'mindmap', label: 'Mind Map' },
   { id: 'study', label: 'Study' },
   { id: 'settings', label: 'Settings' },
 ]

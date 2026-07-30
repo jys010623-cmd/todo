@@ -3,6 +3,7 @@ import { PlannerPanel } from '@/components/planner/PlannerPanel'
 import { usePlanner } from '@/store/PlannerContext'
 import { GoalsView } from '@/views/GoalsView'
 import { MandalView } from '@/views/MandalView'
+import { MindMapView } from '@/views/MindMapView'
 import { MonthView } from '@/views/MonthView'
 import { SettingsView } from '@/views/SettingsView'
 import { StudyView } from '@/views/StudyView'
@@ -34,6 +35,9 @@ export function App() {
 
     case 'mandal':
       return <AppShell center={<MandalView />} />
+
+    case 'mindmap':
+      return <AppShell center={<MindMapView />} />
 
     case 'study':
       return <AppShell center={<StudyView />} />

@@ -1,0 +1,337 @@
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.body {
+  padding: 0 var(--s8) var(--s10);
+}
+
+.picker {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  cursor: pointer;
+  padding: var(--s1) var(--s2);
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  max-width: 760px;
+  margin-bottom: var(--s5);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-1);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * 트리는 노드 수에 따라 얼마든지 커지므로 지면에 맞추지 않고 밀어서 봅니다.
+ * 줄여서 맞추면 글자가 먼저 읽히지 않게 됩니다 — 만다라트와 같은 판단입니다.
+ */
+.canvasScroll {
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  /* 캔버스가 작을 때 위쪽에 붙지 않도록 */
+  max-height: 70vh;
+}
+
+.canvas {
+  position: relative;
+  /* width · height 는 배치가 계산해 인라인으로 들어옵니다. */
+  margin: 0 auto;
+}
+
+/* 가지는 노드 뒤에 깔립니다. */
+.wires {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.wire {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.wire[data-tag='mint'] {
+  stroke: var(--tag-mint);
+}
+.wire[data-tag='blue'] {
+  stroke: var(--tag-blue);
+}
+.wire[data-tag='lilac'] {
+  stroke: var(--tag-lilac);
+}
+.wire[data-tag='coral'] {
+  stroke: var(--tag-coral);
+}
+.wire[data-tag='honey'] {
+  stroke: var(--tag-honey);
+}
+
+/* ── 노드 ───────────────────────────────────────────────── */
+
+.node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-card);
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+.node:hover {
+  border-color: var(--text-4);
+}
+
+/* 갈래마다 왼쪽(오른쪽 가지는 왼쪽, 왼쪽 가지는 오른쪽)에 색 띠를 둡니다. */
+.node[data-tag]::before {
+  content: '';
+  position: absolute;
+  top: var(--s2);
+  bottom: var(--s2);
+  width: 2px;
+  border-radius: var(--r-full);
+}
+
+.node[data-side='right'][data-tag]::before {
+  left: -1px;
+}
+
+.node[data-side='left'][data-tag]::before {
+  right: -1px;
+}
+
+.node[data-tag='mint']::before {
+  background: var(--tag-mint);
+}
+.node[data-tag='blue']::before {
+  background: var(--tag-blue);
+}
+.node[data-tag='lilac']::before {
+  background: var(--tag-lilac);
+}
+.node[data-tag='coral']::before {
+  background: var(--tag-coral);
+}
+.node[data-tag='honey']::before {
+  background: var(--tag-honey);
+}
+
+/* 가운데 하나만 꽉 찬 도형입니다 — 어디서부터 읽어야 하는지 알려 줍니다. */
+.node[data-root] {
+  border-color: transparent;
+  background: var(--accent);
+}
+
+.node[data-root] .nodeText {
+  color: var(--accent-contrast);
+  font-weight: var(--fw-semibold);
+}
+
+/* 루트 바로 아래 갈래는 조금 더 또렷하게 */
+.node[data-branch] .nodeText {
+  color: var(--text-1);
+  font-weight: var(--fw-medium);
+}
+
+.node[data-empty] .nodeText {
+  color: var(--text-4);
+}
+
+.nodeText {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  color: var(--text-2);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+/* ── 도구 — 평소에는 숨어 있습니다 ────────────────────────── */
+
+.tools {
+  display: flex;
+  gap: 2px;
+  flex: none;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.node:hover .tools,
+.node:focus-within .tools {
+  opacity: 1;
+}
+
+.tool {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-xs);
+  font-size: var(--fs-sm);
+  line-height: 1;
+  color: var(--text-3);
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.tool:hover {
+  background: var(--press);
+  color: var(--text-1);
+}
+
+.node[data-root] .tool {
+  color: var(--accent-contrast);
+  opacity: 0.75;
+}
+
+.node[data-root] .tool:hover {
+  background: rgba(255, 255, 255, 0.18);
+  opacity: 1;
+}
+
+/*
+ * 접기 손잡이 — 가지가 뻗어 나가는 쪽 모서리에 걸칩니다.
+ * 접혀 있을 때는 숨은 자식 수를 보여 줘, 접었다는 사실이 드러나게 합니다.
+ */
+.knob {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--r-full);
+  background: var(--surface-card);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  color: var(--text-3);
+  transform: translateY(-50%);
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.node[data-side='right'] .knob {
+  right: -8px;
+}
+
+.node[data-side='left'] .knob {
+  left: -8px;
+}
+
+.knob:hover {
+  border-color: var(--text-3);
+  color: var(--text-1);
+}
+
+/* 가지 추가 입력 — 노드 아래에 붙습니다. */
+.addInput {
+  position: absolute;
+  top: calc(100% + var(--s1));
+  left: 0;
+  width: 100%;
+  padding: var(--s1) var(--s2);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-xs);
+  background: var(--surface-card);
+  font-size: var(--fs-sm);
+  color: var(--text-1);
+  /* 아래 노드에 가리지 않도록 */
+  z-index: 1;
+}
+
+.hint {
+  max-width: 760px;
+  margin-top: var(--s6);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-3);
+}
+
+.hint b {
+  font-weight: var(--fw-semibold);
+  color: var(--text-2);
+}
+
+.empty {
+  padding: var(--s2) 0 var(--s3);
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+
+.add {
+  max-width: 760px;
+  margin-top: var(--s6);
+}
+
+.remove {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  font-size: var(--fs-body);
+  line-height: 1;
+  color: var(--text-3);
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.remove:hover {
+  background: var(--press);
+  color: var(--text-1);
+}
+
+@media (max-width: 1024px) {
+  .scroll {
+    flex: none;
+    overflow: visible;
+  }
+
+  .body {
+    padding: 0 var(--s6) var(--s8);
+  }
+
+  /* 세로로 흐르는 배치에서는 vh 로 재면 판이 지나치게 납작해집니다. */
+  .canvasScroll {
+    max-height: none;
+  }
+}
+
+/* 손가락에는 hover 가 없어서, 도구를 늘 보여 줍니다. */
+@media (hover: none) {
+  .tools {
+    opacity: 1;
+  }
+}

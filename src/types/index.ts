@@ -96,12 +96,37 @@ export interface Mandal {
   actions: string[][]
 }
 
+/**
+ * 마인드맵의 노드 하나.
+ *
+ * 트리를 중첩 구조로 저장하면 노드 하나를 고칠 때마다 조상을 전부 새로 만들어야 해서,
+ * 부모를 가리키는 평평한 배열로 둡니다. 화면에 그릴 때만 트리로 세웁니다.
+ */
+export interface MindNode {
+  id: string
+  text: string
+  /** 루트만 없습니다 */
+  parentId?: string
+  /** 형제 사이의 순서 */
+  order: number
+  /** 접힌 노드는 자식을 그리지 않습니다 */
+  collapsed?: boolean
+}
+
+export interface MindMap {
+  id: string
+  title: string
+  /** 루트를 포함한 모든 노드. 부모 없는 노드가 루트입니다. */
+  nodes: MindNode[]
+}
+
 export type ViewId =
   | 'today'
   | 'week'
   | 'month'
   | 'goals'
   | 'mandal'
+  | 'mindmap'
   | 'study'
   | 'settings'
 
@@ -124,5 +149,6 @@ export interface PlannerData {
   goals: Goal[]
   wishes: WishItem[]
   mandals: Mandal[]
+  mindmaps: MindMap[]
   settings: Settings
 }

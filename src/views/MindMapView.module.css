@@ -103,9 +103,24 @@
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
   background: var(--surface-card);
+  cursor: grab;
+  /* 끌 때 글자가 선택되면 파랗게 번집니다. */
+  touch-action: none;
+  user-select: none;
   transition:
     border-color var(--dur-fast) var(--ease),
     box-shadow var(--dur-fast) var(--ease);
+}
+
+.node[data-dragging] {
+  cursor: grabbing;
+  z-index: 2;
+  box-shadow: 0 6px 20px rgba(55, 53, 47, 0.16);
+}
+
+/* 안쪽 버튼과 입력은 제 커서를 씁니다. */
+.node [data-no-drag] {
+  cursor: auto;
 }
 
 .node:hover {
@@ -275,6 +290,24 @@
 }
 
 /* ── 확대·축소 ────────────────────────────────────────── */
+
+.reset {
+  padding: var(--s1) var(--s3);
+  border-radius: var(--r-full);
+  background: var(--surface-sunken);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--text-2);
+  white-space: nowrap;
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.reset:hover {
+  background: var(--press);
+  color: var(--text-1);
+}
 
 .zoom {
   display: flex;

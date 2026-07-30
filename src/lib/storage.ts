@@ -52,6 +52,11 @@ function asText(value: unknown): string {
   return typeof value === 'string' ? value : ''
 }
 
+/** 좌표에 쓰는 값 — 숫자가 아니거나 NaN·무한대면 없는 것으로 봅니다. */
+function finite(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+}
+
 /**
  * 설정은 한 항목만 비어도 날짜 계산이 통째로 NaN 이 됩니다.
  * (weekStart 가 없으면 달력 칸이 0개가 됩니다.)
@@ -113,6 +118,9 @@ function migrateMindMap(raw: unknown): MindMap {
       parentId: typeof n.parentId === 'string' ? n.parentId : undefined,
       order: typeof n.order === 'number' && Number.isFinite(n.order) ? n.order : i,
       collapsed: n.collapsed === true ? true : undefined,
+      // NaN 이 하나 섞이면 그 노드부터 아래가 통째로 화면 밖으로 나갑니다.
+      dx: finite(n.dx),
+      dy: finite(n.dy),
     }))
 
   // 같은 id 가 둘 있으면 뒤엣것이 앞엣것의 부모로 잡히는 등 트리가 뒤틀립니다.

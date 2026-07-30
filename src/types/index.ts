@@ -117,6 +117,14 @@ export interface MindNode {
   order: number
   /** 접힌 노드는 자식을 그리지 않습니다 */
   collapsed?: boolean
+  /**
+   * 손으로 옮긴 만큼. 자동 배치 자리에서 얼마나 떨어뜨릴지입니다.
+   *
+   * 절대 좌표로 두면 노드를 하나 더 붙일 때마다 옮겨 둔 것들이 전부 어긋납니다.
+   * 자손은 조상의 이동을 함께 물려받아, 가지를 통째로 끌면 아래가 따라옵니다.
+   */
+  dx?: number
+  dy?: number
 }
 
 export interface MindMap {

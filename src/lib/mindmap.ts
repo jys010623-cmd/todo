@@ -113,8 +113,6 @@ export function layoutMindMap(
   }
 
   const placed: PlacedNode[] = []
-  /** 가지를 그릴 때 쓸 중심 좌표 */
-  const center = new Map<string, number>()
 
   /**
    * top 에서 아래로 자식들을 쌓고, 자신은 첫 자식과 마지막 자식의 가운데에 둡니다.
@@ -136,9 +134,7 @@ export function layoutMindMap(
         childCount: (kids.get(node.id) ?? []).length,
         branch: 0,
       })
-      const cy = top + h / 2
-      center.set(node.id, cy)
-      return cy
+      return top + h / 2
     }
 
     let cursor = top
@@ -163,7 +159,6 @@ export function layoutMindMap(
       childCount: list.length,
       branch: 0,
     })
-    center.set(node.id, cy)
     return cy
   }
 
@@ -206,7 +201,6 @@ export function layoutMindMap(
     childCount: (kids.get(root.id) ?? []).length,
     branch: -1,
   })
-  center.set(root.id, tallest / 2)
 
   // ── x 는 깊이로만 정해집니다. 왼쪽은 같은 간격으로 반대편에 놓습니다.
   const step = NODE_W + H_GAP
@@ -214,21 +208,42 @@ export function layoutMindMap(
     placed.reduce((max, p) => (p.side === side && p.depth > max ? p.depth : max), 0)
   // 루트는 side 가 'right' 라 왼쪽 최대 깊이에는 잡히지 않습니다.
   const leftDepth = left.length > 0 ? depthOf('left') : 0
-  const rightDepth = depthOf('right')
 
   const rootX = leftDepth * step
   for (const p of placed) {
     p.x = p.node.id === root.id ? rootX : rootX + (p.side === 'right' ? p.depth : -p.depth) * step
   }
 
-  // 자식이 자기보다 큰 노드는 위로 삐져나갈 수 있어, 가지를 긋기 전에 전체를 0 아래로 내립니다.
-  const minY = placed.reduce((min, p) => Math.min(min, p.y), 0)
-  if (minY < 0) {
-    for (const p of placed) p.y -= minY
-    for (const [id, y] of center) center.set(id, y - minY)
-  }
-
   const byId = new Map(placed.map((p) => [p.node.id, p]))
+
+  /**
+   * 손으로 옮긴 만큼을 얹습니다.
+   * 위에서 아래로 훑으며 조상의 이동을 더해 가므로, 가지를 끌면 그 아래가 함께 갑니다.
+   */
+  const walk = (node: MindNode, ox: number, oy: number) => {
+    const x = ox + (node.dx ?? 0)
+    const y = oy + (node.dy ?? 0)
+    const p = byId.get(node.id)
+    if (p) {
+      p.x += x
+      p.y += y
+    }
+    for (const child of visibleChildren(node, kids)) walk(child, x, y)
+  }
+  walk(root, 0, 0)
+
+  /*
+   * 자식이 자기보다 큰 노드는 위로 삐져나가고, 손으로 옮기면 왼쪽으로도 나갑니다.
+   * 가지를 긋기 전에 전체를 0 안쪽으로 끌어들입니다.
+   */
+  const minX = placed.reduce((min, p) => Math.min(min, p.x), 0)
+  const minY = placed.reduce((min, p) => Math.min(min, p.y), 0)
+  if (minX < 0 || minY < 0) {
+    for (const p of placed) {
+      p.x -= minX
+      p.y -= minY
+    }
+  }
 
   /**
    * 루트 바로 아래 갈래마다 색을 달리하려고, 자손에게 조상의 순번을 물려줍니다.
@@ -254,11 +269,15 @@ export function layoutMindMap(
     const parent = byId.get(parentId)
     if (!parent) continue
 
-    const rightward = p.side === 'right'
+    /*
+     * 손으로 옮기면 자식이 부모보다 왼쪽에 놓일 수도 있습니다.
+     * 자리에 상관없이 가까운 쪽 모서리끼리 잇도록, 실제 좌표를 보고 방향을 정합니다.
+     */
+    const rightward = p.x >= parent.x
     const x1 = rightward ? parent.x + parent.w : parent.x
-    const y1 = center.get(parentId) ?? parent.y + parent.h / 2
+    const y1 = parent.y + parent.h / 2
     const x2 = rightward ? p.x : p.x + p.w
-    const y2 = center.get(p.node.id) ?? p.y + p.h / 2
+    const y2 = p.y + p.h / 2
     const dx = (x2 - x1) / 2
 
     edges.push({
@@ -269,8 +288,9 @@ export function layoutMindMap(
     })
   }
 
+  // 손으로 옮긴 노드가 오른쪽·아래로 나갈 수 있어, 실제 상자에서 판 크기를 구합니다.
   const height = placed.reduce((max, p) => Math.max(max, p.y + p.h), 0)
-  const width = (leftDepth + rightDepth) * step + NODE_W
+  const width = placed.reduce((max, p) => Math.max(max, p.x + p.w), 0)
 
   // 가지가 노드 뒤에서부터 그려지도록 깊이 순으로 정렬해 둡니다.
   placed.sort((a, b) => a.depth - b.depth)

@@ -82,6 +82,9 @@ export type Action =
   /** 노드를 지우면 그 아래 가지도 함께 사라집니다. 루트는 지울 수 없습니다. */
   | { type: 'DELETE_MIND_NODE'; mapId: string; nodeId: string }
   | { type: 'TOGGLE_MIND_NODE'; mapId: string; nodeId: string }
+  /** 자동 배치 자리에서 얼마나 옮겨 둘지. 절대 좌표가 아닙니다. */
+  | { type: 'MOVE_MIND_NODE'; mapId: string; nodeId: string; dx: number; dy: number }
+  | { type: 'RESET_MIND_LAYOUT'; mapId: string }
   | { type: 'SET_SETTINGS'; patch: Partial<Settings> }
   | { type: 'REPLACE'; data: PlannerData }
 
@@ -449,6 +452,33 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
                   n.id === action.nodeId ? { ...n, collapsed: !n.collapsed } : n,
                 ),
               }
+            : m,
+        ),
+      }
+
+    case 'MOVE_MIND_NODE': {
+      // 0 은 '안 옮김' 이므로 굳이 들고 있지 않습니다.
+      const dx = Math.round(action.dx) || undefined
+      const dy = Math.round(action.dy) || undefined
+      return {
+        ...state,
+        mindmaps: state.mindmaps.map((m) =>
+          m.id === action.mapId
+            ? {
+                ...m,
+                nodes: m.nodes.map((n) => (n.id === action.nodeId ? { ...n, dx, dy } : n)),
+              }
+            : m,
+        ),
+      }
+    }
+
+    case 'RESET_MIND_LAYOUT':
+      return {
+        ...state,
+        mindmaps: state.mindmaps.map((m) =>
+          m.id === action.mapId
+            ? { ...m, nodes: m.nodes.map(({ dx: _dx, dy: _dy, ...rest }) => rest) }
             : m,
         ),
       }

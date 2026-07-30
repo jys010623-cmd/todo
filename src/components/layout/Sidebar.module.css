@@ -145,7 +145,8 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    padding: 0 var(--s2);
+    /* 여덟 개가 375px 에 들어가려면 여기가 4px 을 넘으면 안 됩니다. */
+    padding: 0 var(--s1);
     border-radius: 0;
     font-size: var(--fs-cap);
     white-space: nowrap;
@@ -157,8 +158,8 @@
   }
 
   .item[data-active]::before {
-    left: var(--s2);
-    right: var(--s2);
+    left: var(--s1);
+    right: var(--s1);
     top: 0;
     bottom: auto;
     width: auto;

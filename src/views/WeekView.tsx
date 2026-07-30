@@ -49,11 +49,16 @@ export function WeekView() {
     if (composing) inputRef.current?.focus()
   }, [composing])
 
-  // 주가 바뀌면 쓰다 만 입력은 닫습니다 — 안 보이는 날짜에 남아 있게 됩니다.
+  /*
+   * 주가 바뀌면 쓰다 만 입력은 닫습니다 — 안 보이는 날짜에 남아 있게 됩니다.
+   * selectedDate 로 걸면 안 됩니다. 빈 칸을 누르면 그 날이 선택되면서 이 effect 가
+   * 돌아, 방금 연 입력을 그 자리에서 지웁니다(두 번 눌러야 열립니다).
+   */
+  const weekKey = days[0]
   useEffect(() => {
     setComposing(null)
     setDraft('')
-  }, [selectedDate])
+  }, [weekKey])
 
   /** 자정부터 그리면 빈 새벽만 보입니다. 하루가 시작하는 자리로 내려 둡니다. */
   const scrollRef = useRef<HTMLDivElement>(null)

@@ -107,7 +107,19 @@ export type Action =
   | { type: 'ADD_MINDMAP'; title: string }
   | { type: 'UPDATE_MINDMAP'; id: string; patch: Partial<Omit<MindMap, 'nodes'>> }
   | { type: 'DELETE_MINDMAP'; id: string }
-  | { type: 'ADD_MIND_NODE'; mapId: string; parentId: string; text: string }
+  /**
+   * id 를 호출부가 넘길 수 있습니다 — 키보드로 이어 쓸 때 방금 만든 노드로
+   * 곧바로 옮겨 가야 하는데, 리듀서가 지어 주면 그 id 를 알 길이 없습니다.
+   * afterId 가 있으면 그 형제 바로 뒤에 끼웁니다.
+   */
+  | {
+      type: 'ADD_MIND_NODE'
+      mapId: string
+      parentId: string
+      text: string
+      id?: string
+      afterId?: string
+    }
   | { type: 'UPDATE_MIND_NODE'; mapId: string; nodeId: string; patch: Partial<MindNode> }
   /** 노드를 지우면 그 아래 가지도 함께 사라집니다. 루트는 지울 수 없습니다. */
   | { type: 'DELETE_MIND_NODE'; mapId: string; nodeId: string }
@@ -419,24 +431,34 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
       return { ...state, mindmaps: state.mindmaps.filter((m) => m.id !== action.id) }
 
     case 'ADD_MIND_NODE': {
+      // 키보드로 이어 쓸 때는 빈 노드로 먼저 자리를 잡고 그 자리에서 적습니다.
       const text = action.text.trim()
-      if (!text) return state
       return {
         ...state,
         mindmaps: state.mindmaps.map((m) => {
           if (m.id !== action.mapId) return m
           if (!m.nodes.some((n) => n.id === action.parentId)) return m
+          // 이미 있는 id 를 다시 쓰면 트리가 뒤틀립니다.
+          if (action.id && m.nodes.some((n) => n.id === action.id)) return m
 
-          const order =
-            m.nodes
-              .filter((n) => n.parentId === action.parentId)
-              .reduce((max, n) => Math.max(max, n.order), -1) + 1
+          const siblings = m.nodes.filter((n) => n.parentId === action.parentId)
+          const after = action.afterId ? siblings.find((n) => n.id === action.afterId) : undefined
 
-          const node: MindNode = { id: uid('mn'), text, parentId: action.parentId, order }
-          // 접힌 부모에 자식을 붙이면 방금 쓴 것이 보이지 않아, 함께 펼칩니다.
-          const nodes = m.nodes.map((n) =>
-            n.id === action.parentId && n.collapsed ? { ...n, collapsed: false } : n,
-          )
+          const order = after
+            ? after.order + 1
+            : siblings.reduce((max, n) => Math.max(max, n.order), -1) + 1
+
+          const node: MindNode = { id: action.id ?? uid('mn'), text, parentId: action.parentId, order }
+
+          const nodes = m.nodes.map((n) => {
+            // 접힌 부모에 자식을 붙이면 방금 쓴 것이 보이지 않아, 함께 펼칩니다.
+            if (n.id === action.parentId && n.collapsed) return { ...n, collapsed: false }
+            // 사이에 끼우면 뒤엣것들을 한 칸씩 밀어야 순서가 유지됩니다.
+            if (after && n.parentId === action.parentId && n.order >= order) {
+              return { ...n, order: n.order + 1 }
+            }
+            return n
+          })
           return { ...m, nodes: [...nodes, node] }
         }),
       }

@@ -5,8 +5,9 @@ import { InlineEdit } from '@/components/common/InlineEdit'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { todayISO } from '@/lib/date'
 import { NODE_W, layoutMindMap, type PlacedNode } from '@/lib/mindmap'
+import { uid } from '@/lib/id'
 import { usePlanner } from '@/store/PlannerContext'
-import { TAG_COLORS } from '@/types'
+import { TAG_COLORS, type MindNode } from '@/types'
 import styles from './MindMapView.module.css'
 
 /** 가지마다 색을 돌려 씁니다 — 같은 색이 이웃하지만 않으면 갈래가 구분됩니다. */
@@ -78,6 +79,61 @@ export function MindMapView() {
   const step = (d: number) => setZoom((z) => Math.min(1.6, Math.max(0.6, Math.round((z + d) * 10) / 10)))
 
   const hasMoved = current?.nodes.some((n) => n.dx || n.dy) ?? false
+
+  /*
+   * 글을 고치는 자리는 뷰가 들고 있습니다.
+   * 노드 안에 가둬 두면 Enter·Tab 으로 다음 노드를 만들고 그리로 옮겨 갈 수 없습니다.
+   */
+  const [editing, setEditing] = useState<{ id: string; draft: string } | null>(null)
+
+  const openEdit = (node: MindNode) => setEditing({ id: node.id, draft: node.text })
+
+  /** 적은 것을 반영하고, 빈 채로 둔 새 노드는 치웁니다. */
+  const closeEdit = () => {
+    if (!current || !editing) return
+    const node = current.nodes.find((n) => n.id === editing.id)
+    setEditing(null)
+    if (!node) return
+
+    const text = editing.draft.trim()
+    if (text === node.text) return
+
+    // 빈 노드를 남기면 판에 '…' 만 떠 있게 됩니다. 자식이 없을 때만 치웁니다.
+    if (!text && !current.nodes.some((n) => n.parentId === node.id) && node.parentId) {
+      dispatch({ type: 'DELETE_MIND_NODE', mapId: current.id, nodeId: node.id })
+      return
+    }
+    if (text) {
+      dispatch({ type: 'UPDATE_MIND_NODE', mapId: current.id, nodeId: node.id, patch: { text } })
+    }
+  }
+
+  /**
+   * 적은 것을 반영하고 다음 노드를 만들어 그리로 넘어갑니다.
+   * id 를 여기서 지어 넘겨야 방금 만든 노드로 곧바로 옮겨 갈 수 있습니다.
+   */
+  const editNext = (node: MindNode, kind: 'sibling' | 'child') => {
+    if (!current) return
+    const text = editing?.draft.trim() ?? ''
+    if (text && text !== node.text) {
+      dispatch({ type: 'UPDATE_MIND_NODE', mapId: current.id, nodeId: node.id, patch: { text } })
+    }
+
+    // 루트는 형제를 가질 수 없습니다 — 자식으로 받습니다.
+    const asChild = kind === 'child' || !node.parentId
+    const parentId = asChild ? node.id : (node.parentId as string)
+    const id = uid('mn')
+
+    dispatch({
+      type: 'ADD_MIND_NODE',
+      mapId: current.id,
+      parentId,
+      text: '',
+      id,
+      afterId: asChild ? undefined : node.id,
+    })
+    setEditing({ id, draft: '' })
+  }
 
   /** 보낸 것은 다른 화면으로 가 버려, 눌렀는데 아무 일도 없어 보이지 않게 한 줄 남깁니다. */
   const [sent, setSent] = useState<string | null>(null)
@@ -217,14 +273,6 @@ export function MindMapView() {
                       if (el) nodeRefs.current.set(placed.node.id, el)
                       else nodeRefs.current.delete(placed.node.id)
                     }}
-                    onRename={(text) =>
-                      dispatch({
-                        type: 'UPDATE_MIND_NODE',
-                        mapId: current.id,
-                        nodeId: placed.node.id,
-                        patch: { text },
-                      })
-                    }
                     onAddChild={(text) =>
                       dispatch({
                         type: 'ADD_MIND_NODE',
@@ -247,6 +295,11 @@ export function MindMapView() {
                         nodeId: placed.node.id,
                       })
                     }
+                    editing={editing?.id === placed.node.id ? editing.draft : null}
+                    onEditStart={() => openEdit(placed.node)}
+                    onEditChange={(draft) => setEditing({ id: placed.node.id, draft })}
+                    onEditEnd={closeEdit}
+                    onEditNext={(kind) => editNext(placed.node, kind)}
                     zoom={zoom}
                     onDragMove={(dx, dy) => setDrag({ id: placed.node.id, dx, dy })}
                     onDragEnd={(dx, dy) => {
@@ -280,9 +333,10 @@ export function MindMapView() {
             )}
 
             <p className={styles.hint}>
-              노드에 올리면 나오는 <b>+</b> 로 가지를 뻗고, <b>→</b> 로 오늘 할 일에 보내고,
-              <b>×</b> 로 그 아래를 함께 지웁니다. 가지 끝의 동그라미를 누르면 접힙니다.
-              판이 크면 위쪽 <b>+ −</b> 로 키우고 줄입니다.
+              글을 누르면 그 자리에서 고칩니다. 적는 동안 <b>Enter</b> 로 옆 가지,{' '}
+              <b>Tab</b> 으로 아래 가지를 이어 만들고 <b>Esc</b> 로 멈춥니다. 노드는 끌어서
+              옮기고, 올리면 나오는 <b>→</b> 로 오늘 할 일에 보내고 <b>×</b> 로 그 아래를
+              함께 지웁니다. 판이 크면 위쪽 <b>+ −</b> 로 키우고 줄입니다.
             </p>
           </>
         ) : (
@@ -307,11 +361,16 @@ interface NodeProps {
   adding: boolean
   onAddingChange: (open: boolean) => void
   registerRef: (el: HTMLDivElement | null) => void
-  onRename: (text: string) => void
   onAddChild: (text: string) => void
   onDelete: () => void
   onToggle: () => void
   onSend: () => void
+  /** 고치는 중이면 그 글, 아니면 null */
+  editing: string | null
+  onEditStart: () => void
+  onEditChange: (draft: string) => void
+  onEditEnd: () => void
+  onEditNext: (kind: 'sibling' | 'child') => void
   /** 화면 위 움직인 거리를 판 좌표로 되돌리는 데 씁니다. */
   zoom: number
   onDragMove: (dx: number, dy: number) => void
@@ -324,15 +383,28 @@ function Node({
   adding,
   onAddingChange,
   registerRef,
-  onRename,
   onAddChild,
   onDelete,
   onToggle,
   onSend,
+  editing,
+  onEditStart,
+  onEditChange,
+  onEditEnd,
+  onEditNext,
   zoom,
   onDragMove,
   onDragEnd,
 }: NodeProps) {
+  const editRef = useRef<HTMLInputElement>(null)
+
+  // 새로 생긴 노드로 넘어오면 곧바로 적을 수 있어야 합니다.
+  useEffect(() => {
+    if (editing === null) return
+    const input = editRef.current
+    input?.focus()
+    input?.select()
+  }, [editing !== null])
   const { node, x, y, depth, side, childCount } = placed
   const inputRef = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState('')
@@ -419,13 +491,39 @@ function Node({
       aria-expanded={childCount > 0 ? !node.collapsed : undefined}
       aria-label={node.text || '빈 노드'}
     >
-      <InlineEdit
-        value={node.text || '…'}
-        editValue={node.text}
-        label={node.text || '빈 노드'}
-        className={styles.nodeText}
-        onCommit={onRename}
-      />
+      {editing !== null ? (
+        <input
+          ref={editRef}
+          data-no-drag
+          className={`${styles.nodeText} ${styles.editInput}`}
+          value={editing}
+          aria-label={`${node.text || '빈 노드'} 수정`}
+          onChange={(e) => onEditChange(e.target.value)}
+          onKeyDown={(e) => {
+            // Enter 는 형제, Tab 은 자식 — 생각나는 순서대로 손을 떼지 않고 이어 씁니다.
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              onEditNext('sibling')
+            } else if (e.key === 'Tab') {
+              e.preventDefault()
+              onEditNext('child')
+            } else if (e.key === 'Escape' || (e.key === 'Enter' && e.shiftKey)) {
+              e.preventDefault()
+              onEditEnd()
+            }
+          }}
+          onBlur={onEditEnd}
+        />
+      ) : (
+        <button
+          type="button"
+          className={styles.nodeText}
+          aria-label={`${node.text || '빈 노드'} 수정`}
+          onClick={onEditStart}
+        >
+          {node.text || '…'}
+        </button>
+      )}
 
       <div className={styles.tools} data-no-drag>
         <button

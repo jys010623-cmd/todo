@@ -192,6 +192,13 @@
   overflow-wrap: anywhere;
 }
 
+/* 글자 크기와 자리가 버튼일 때와 같아야 눌러도 글이 튀지 않습니다. */
+.editInput {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 /* ── 도구 — 평소에는 숨어 있습니다 ────────────────────────── */
 
 .tools {

@@ -138,6 +138,12 @@ export function WeekView() {
       </PageHeader>
 
       <div className={styles.week} style={{ '--hour-h': `${HOUR_H}px` } as React.CSSProperties}>
+        {/*
+         * 머리·종일·격자가 한 스크롤 안에 있어야 열이 맞습니다.
+         * 격자만 따로 스크롤시키면 그쪽만 스크롤바 폭만큼 좁아져 선이 틀어집니다.
+         */}
+        <div className={styles.scroll} ref={scrollRef}>
+        <div className={styles.sticky}>
         {/* ── 요일 머리 ── */}
         <div className={styles.head}>
           <div className={styles.gutterHead} />
@@ -227,9 +233,9 @@ export function WeekView() {
             )
           })}
         </div>
+        </div>
 
         {/* ── 시간 격자 ── */}
-        <div className={styles.gridScroll} ref={scrollRef}>
           <div className={styles.grid}>
             <div className={styles.gutter}>
               {HOURS.map((h) => (

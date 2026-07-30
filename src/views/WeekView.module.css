@@ -58,18 +58,31 @@
   }
 }
 
+/*
+ * 머리·종일·격자가 한 스크롤 안에 있어야 열이 맞습니다.
+ * 격자만 따로 스크롤시키면 그쪽만 스크롤바 폭만큼 좁아져 세로선이 틀어집니다.
+ */
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* 머리와 종일은 위에 붙어 따라옵니다 — 스크롤해도 어느 요일인지 보여야 하니까. */
+.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--surface);
+}
+
 /* 시간 눈금 자리 + 7일 — 세 줄이 같은 열을 씁니다. */
 .head,
 .allDay,
 .grid {
   display: grid;
   grid-template-columns: 46px repeat(7, minmax(0, 1fr));
-}
-
-/* ── 요일 머리 ────────────────────────────────────────── */
-
-.head {
-  flex: none;
 }
 
 .gutterHead {
@@ -131,11 +144,11 @@
 
 /* ── 종일 ─────────────────────────────────────────────── */
 
+/*
+ * 자기 스크롤을 두지 않습니다 — 여기서 스크롤바가 생기면 이 줄만 좁아져
+ * 머리·격자와 세로선이 어긋납니다. 종일 항목은 보통 몇 개뿐입니다.
+ */
 .allDay {
-  flex: none;
-  max-height: 30vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   border-bottom: 1px solid var(--border);
 }
 
@@ -163,13 +176,6 @@
 }
 
 /* ── 시간 격자 ────────────────────────────────────────── */
-
-.gridScroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
 
 .gutter {
   position: relative;
@@ -414,15 +420,18 @@
     min-width: 826px;
   }
 
-  .gridScroll {
+  .scroll {
     flex: none;
     /* 페이지가 세로로 흐르므로 격자는 제 높이를 그대로 가집니다. */
     overflow-y: visible;
   }
 
-  .allDay {
-    max-height: none;
-    overflow-y: visible;
+  /*
+   * 붙잡을 스크롤이 없어져 화면 맨 위에 달라붙습니다.
+   * 좁은 화면에서는 자리를 많이 먹으므로 그냥 흐르게 둡니다.
+   */
+  .sticky {
+    position: static;
   }
 
   /* 마우스가 없으면 hover 로 숨긴 것을 영영 못 찾습니다. */

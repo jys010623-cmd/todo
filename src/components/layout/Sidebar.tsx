@@ -34,6 +34,7 @@ const GROUPS: { label?: string; items: NavItem[] }[] = [
       { id: 'mandal', label: 'Mandal', short: '만다라트' },
       { id: 'mindmap', label: 'Mind Map', short: '마인드맵' },
       { id: 'study', label: 'Study', short: '스터디' },
+      { id: 'review', label: 'Review', short: '돌아보기' },
     ],
   },
   // 이름표 없이 선 하나로만 떼어 둡니다 — 계획도 기록도 아닌 것들입니다.

@@ -308,6 +308,33 @@ describe('설정 — 한 항목이 비어도 나머지가 살아야 한다', () 
     expect(got).toBeLessThanOrEqual(Date.now())
   })
 
+  it('알림은 없던 시절 데이터에 아예 없다 — 그때는 꺼진 것으로', () => {
+    expect(parse({ settings: {} }).settings.notify).toBeUndefined()
+  })
+
+  it('알림 설정을 지킨다', () => {
+    expect(parse({ settings: { notify: { enabled: true, leadMin: 30 } } }).settings.notify).toEqual({
+      enabled: true,
+      leadMin: 30,
+    })
+  })
+
+  it.each([
+    ['0분 전은 예고가 아니라 화면의 최소값으로', 0, 5],
+    ['음수', -5, 5],
+    ['1분 전도 예고가 아닙니다', 1, 5],
+    ['지나치게 이르면 소음이 됩니다', 9999, 120],
+    ['소수', 12.4, 12],
+  ])('%s', (_name, leadMin, want) => {
+    expect(parse({ settings: { notify: { enabled: true, leadMin } } }).settings.notify?.leadMin).toBe(
+      want,
+    )
+  })
+
+  it('켜짐이 참이 아니면 꺼진 것 — 애매한 값으로 알림이 울리면 안 됩니다', () => {
+    expect(parse({ settings: { notify: { enabled: 'yes' } } }).settings.notify?.enabled).toBe(false)
+  })
+
   it('설정이 통째로 없어도 기본값이 선다', () => {
     const s = parse({}).settings
     expect(s.theme).toBe('system')

@@ -6,6 +6,7 @@ import { HomeView } from '@/views/HomeView'
 import { MandalView } from '@/views/MandalView'
 import { MindMapView } from '@/views/MindMapView'
 import { MonthView } from '@/views/MonthView'
+import { ReviewView } from '@/views/ReviewView'
 import { SearchView } from '@/views/SearchView'
 import { SettingsView } from '@/views/SettingsView'
 import { StudyView } from '@/views/StudyView'
@@ -49,6 +50,9 @@ export function App() {
 
     case 'study':
       return <AppShell center={<StudyView />} />
+
+    case 'review':
+      return <AppShell center={<ReviewView />} />
 
     case 'settings':
       return <AppShell center={<SettingsView />} />

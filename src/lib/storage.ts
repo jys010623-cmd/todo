@@ -47,6 +47,11 @@ const ACTIONS = 8
 /** 간격의 위 한계 — '13주마다' 는 사람이 세지 않고, 화면에서도 고를 수 없습니다. */
 const MAX_EVERY = 12
 
+/** 알림을 몇 분 전에 — 나갈 채비를 하기에 10분이면 대개 맞습니다. */
+export const DEFAULT_LEAD_MIN = 10
+const MIN_LEAD_MIN = 5
+const MAX_LEAD_MIN = 120
+
 function migrateTag(tag: unknown): TagColor {
   if (typeof tag === 'string') {
     if (VALID_TAGS.has(tag)) return tag as TagColor
@@ -105,6 +110,29 @@ function migrateSettings(raw: unknown): Settings {
       typeof s.exportedAt === 'number' && Number.isFinite(s.exportedAt) && s.exportedAt > 0
         ? Math.min(s.exportedAt, Date.now())
         : undefined,
+    notify: migrateNotify(s.notify),
+  }
+}
+
+/**
+ * 알림 설정.
+ *
+ * 뽀모도로와 같은 자를 쓰지 않습니다 — 그쪽은 1분짜리 집중도 뜻이 있지만,
+ * '1분 전 알림' 은 예고가 아닙니다. 화면에서 고를 수 있는 만큼(5분)을 바닥으로 둡니다.
+ * 너무 이르면 예고가 아니라 소음이 되므로 위도 막습니다.
+ */
+function migrateNotify(raw: unknown): Settings['notify'] {
+  const n = (raw ?? undefined) as Partial<NonNullable<Settings['notify']>> | undefined
+  if (!n || typeof n !== 'object') return undefined
+
+  const lead = finite(n.leadMin)
+  return {
+    // 애매한 값으로 알림이 울리면 안 됩니다 — 참일 때만 켭니다.
+    enabled: n.enabled === true,
+    leadMin:
+      lead === undefined
+        ? DEFAULT_LEAD_MIN
+        : Math.min(Math.max(Math.round(lead), MIN_LEAD_MIN), MAX_LEAD_MIN),
   }
 }
 

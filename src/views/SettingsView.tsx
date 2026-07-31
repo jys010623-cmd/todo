@@ -4,7 +4,7 @@ import { Segmented } from '@/components/common/Segmented'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { daysSince, todayISO } from '@/lib/date'
 import { icsNow, toICS } from '@/lib/ics'
-import { clearBroken, parseData, readBroken } from '@/lib/storage'
+import { DEFAULT_LEAD_MIN, clearBroken, parseData, readBroken } from '@/lib/storage'
 import { createInitialData } from '@/store/initial'
 import { usePlanner } from '@/store/PlannerContext'
 import type { PlannerData } from '@/types'
@@ -73,6 +73,41 @@ export function SettingsView() {
 
   /** 읽지 못해 옆으로 치워 둔 기록 — 있으면 되찾을 자리를 내줍니다. */
   const [broken, setBroken] = useState(() => readBroken())
+
+  /** 알림을 켜지 못한 이유 — 조용히 안 켜지면 앱이 고장 난 줄 압니다. */
+  const [notifyMsg, setNotifyMsg] = useState<string | null>(null)
+
+  /**
+   * 알림 켜기.
+   *
+   * 허락은 눌렀을 때만 물어봅니다 — 화면에 들어오자마자 묻는 창은 대개 반사적으로
+   * 거절당하고, 한 번 거절하면 브라우저가 다시 묻지 않습니다.
+   */
+  const toggleNotify = async (on: boolean) => {
+    setNotifyMsg(null)
+    const leadMin = settings.notify?.leadMin ?? DEFAULT_LEAD_MIN
+
+    if (!on) {
+      dispatch({ type: 'SET_SETTINGS', patch: { notify: { enabled: false, leadMin } } })
+      return
+    }
+
+    if (typeof Notification === 'undefined') {
+      setNotifyMsg('이 브라우저는 알림을 지원하지 않습니다.')
+      return
+    }
+
+    const granted =
+      Notification.permission === 'granted'
+        ? 'granted'
+        : await Notification.requestPermission()
+
+    if (granted !== 'granted') {
+      setNotifyMsg('브라우저에서 알림이 막혀 있습니다. 주소창 옆 자물쇠에서 허용해 주세요.')
+      return
+    }
+    dispatch({ type: 'SET_SETTINGS', patch: { notify: { enabled: true, leadMin } } })
+  }
 
   const download = (text: string, name: string, type = 'application/json') => {
     const url = URL.createObjectURL(new Blob([text], { type }))
@@ -195,6 +230,59 @@ export function SettingsView() {
             onChange={(v) => dispatch({ type: 'SET_SETTINGS', patch: { hour12: v === 'h12' } })}
           />
         </section>
+
+        {/*
+         * 알림.
+         *
+         * 웹 알림은 이 앱이 열려 있는 동안에만 뜹니다 — 서버가 없어서 닫힌 뒤에는
+         * 아무도 대신 깨워 주지 않습니다. 켜기 전에 그 사실을 먼저 말합니다.
+         * 켜 두고 안 뜨는 것보다 안 켠 것이 낫습니다.
+         */}
+        <section className={styles.row}>
+          <div className={styles.label}>
+            <h2 className={styles.labelTitle}>알림</h2>
+            <p className={styles.labelBody}>
+              시작이 다가오면 알려 줍니다. 다만 <b>이 앱이 열려 있는 동안에만</b> 뜹니다 —
+              탭을 닫으면 알리지 못합니다.
+            </p>
+            {notifyMsg && <p className={styles.note} data-error>{notifyMsg}</p>}
+          </div>
+          <div className={styles.actions}>
+            <Segmented
+              label="알림"
+              value={settings.notify?.enabled ? 'on' : 'off'}
+              options={[
+                { value: 'off', label: '끄기' },
+                { value: 'on', label: '켜기' },
+              ]}
+              onChange={(v) => void toggleNotify(v === 'on')}
+            />
+          </div>
+        </section>
+
+        {settings.notify?.enabled && (
+          <section className={styles.row}>
+            <div className={styles.label}>
+              <h2 className={styles.labelTitle}>얼마나 앞서</h2>
+              <p className={styles.labelBody}>나갈 채비를 하기에 넉넉한 만큼.</p>
+            </div>
+            <div className={styles.actions}>
+              <Stepper
+                label="분 전"
+                value={settings.notify.leadMin}
+                step={5}
+                min={5}
+                max={60}
+                onChange={(leadMin) =>
+                  dispatch({
+                    type: 'SET_SETTINGS',
+                    patch: { notify: { enabled: true, leadMin } },
+                  })
+                }
+              />
+            </div>
+          </section>
+        )}
 
         <section className={styles.row}>
           <div className={styles.label}>

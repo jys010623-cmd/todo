@@ -253,6 +253,7 @@ export type ViewId =
   | 'mandal'
   | 'mindmap'
   | 'study'
+  | 'review'
   | 'settings'
 
 /** 'system' 은 기기 설정을 따라갑니다 — 밤에 저절로 어두워집니다. */
@@ -275,6 +276,14 @@ export interface Settings {
    * 사라집니다. 언제 챙겼는지 아무도 안 알려주면 '언젠가 하지' 로 미루다 잃습니다.
    */
   exportedAt?: number
+  /**
+   * 일정이 다가오면 알릴지, 몇 분 전에 알릴지.
+   *
+   * 웹 알림은 이 앱이 열려 있는 동안에만 뜹니다 — 서버가 없어서 닫힌 뒤에는 아무도
+   * 대신 깨워 주지 않습니다. 그래서 기본은 꺼져 있습니다. 켜 두고 안 뜨는 것보다
+   * 안 켠 것이 낫습니다.
+   */
+  notify?: { enabled: boolean; leadMin: number }
 }
 
 /** localStorage 에 영속되는 도메인 상태 */

@@ -1,0 +1,175 @@
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.body {
+  padding: 0 var(--s8) var(--s10);
+  max-width: 820px;
+}
+
+.blank {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--text-3);
+}
+
+/* 셋이 나란히 — 좁아지면 알아서 접힙니다. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--s3);
+  margin-bottom: var(--s10);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-width: 0;
+  padding: var(--s5);
+  border-radius: var(--r-lg);
+  background: var(--surface-card);
+}
+
+.statLabel {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-3);
+  line-height: 1.2;
+}
+
+.statValue {
+  font-size: var(--fs-display);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.1;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 분모는 한 단계 물러나야 앞의 숫자가 읽힙니다. */
+.of {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  color: var(--text-3);
+}
+
+.statSub {
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  line-height: 1.4;
+}
+
+.section {
+  margin-bottom: var(--s10);
+}
+
+/* ── 무엇에 썼나 ─────────────────────────────────────── */
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+}
+
+.barDot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-full);
+}
+
+.barName {
+  flex: none;
+  width: 52px;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+
+.barTrack {
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-full);
+}
+
+.barValue {
+  flex: none;
+  min-width: 72px;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 이어 오는 것 ────────────────────────────────────── */
+
+.streaks {
+  display: flex;
+  flex-direction: column;
+}
+
+.streak {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.streak:last-child {
+  border-bottom: none;
+}
+
+.streakName {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-1);
+  overflow-wrap: anywhere;
+}
+
+/* 이어 온 날 수 — 이 화면에서 가장 기분 좋은 숫자입니다. */
+.streakDays {
+  flex: none;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin-top: var(--s2);
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+}
+
+@media (max-width: 1024px) {
+  .scroll {
+    flex: none;
+    overflow-y: visible;
+  }
+
+  .body {
+    padding: 0 var(--s6) var(--s8);
+  }
+}

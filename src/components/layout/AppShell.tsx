@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { UndoBar } from '@/components/common/UndoBar'
+import { NotifyWatch } from './NotifyWatch'
 import { Sidebar } from './Sidebar'
 import styles from './AppShell.module.css'
 
@@ -20,6 +21,8 @@ export function AppShell({ center, right }: Props) {
       {right ? <aside className={styles.right}>{right}</aside> : null}
       {/* 어느 뷰에서 지웠든 같은 자리에 뜨도록 셸에 둡니다. */}
       <UndoBar />
+      {/* 그리는 것이 없습니다 — 어느 화면에 있든 살펴봐야 해서 여기 둡니다. */}
+      <NotifyWatch />
     </div>
   )
 }

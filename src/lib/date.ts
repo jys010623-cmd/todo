@@ -142,6 +142,16 @@ export function timeToMinutes(t: Time): number {
   return h * 60 + m
 }
 
+/** 그 달의 1일부터 말일까지 — 달마다 길이가 달라 직접 세지 않습니다. */
+export function monthDays(s: ISODate): ISODate[] {
+  const d = parseISO(s)
+  const year = d.getFullYear()
+  const month = d.getMonth()
+  // 다음 달 0일 = 이번 달 말일
+  const last = new Date(year, month + 1, 0).getDate()
+  return Array.from({ length: last }, (_, i) => toISO(new Date(year, month, i + 1)))
+}
+
 /**
  * 그때부터 지금까지 며칠.
  *

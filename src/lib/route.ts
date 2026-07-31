@@ -18,6 +18,7 @@ const VIEWS: ViewId[] = [
   'mandal',
   'mindmap',
   'study',
+  'review',
   'settings',
 ]
 

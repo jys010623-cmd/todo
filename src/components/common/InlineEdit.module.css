@@ -23,5 +23,21 @@
 
 .input {
   background: var(--accent-faint);
-  box-shadow: inset 0 -1px 0 var(--accent);
+  box-shadow: inset 0 -2px 0 var(--accent);
+  /* 높이는 적힌 줄 수에 맞춰 화면이 재서 넣습니다 — 스크롤 막대가 뜰 일이 없습니다. */
+  overflow: hidden;
+  /* 글자 상자와 같은 자리에 앉게 — textarea 는 기본이 baseline 이라 한 칸 내려갑니다. */
+  vertical-align: top;
+}
+
+/*
+ * 전역 포커스 링을 여기서는 끕니다.
+ *
+ * 이 입력은 고칠 때만 생기고 그때는 늘 포커스를 쥐고 있습니다 — 옅은 액센트 면과
+ * 아래 밑줄이 이미 '여기를 고치는 중' 이라고 말합니다. 그 위에 2px 링이 2px 떨어져
+ * 한 겹 더 그려지면 상자 밖으로 4px 이 삐져나가는데, 일정 줄은 서로 붙어 있어서
+ * 그만큼이 위아래 줄을 파고듭니다.
+ */
+.input:focus-visible {
+  outline: none;
 }

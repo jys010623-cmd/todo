@@ -141,3 +141,34 @@ export function timeToMinutes(t: Time): number {
   const [h, m] = t.split(':').map(Number)
   return h * 60 + m
 }
+
+/**
+ * 그때부터 지금까지 며칠.
+ *
+ * 시각이 아니라 '날' 로 셉니다 — 어젯밤 11시와 오늘 새벽 1시는 두 시간 차이지만
+ * 사람에게는 어제와 오늘입니다. 앞선 시각(미래)이면 0 으로 둡니다.
+ */
+export function daysSince(from: number, now: number): number {
+  const a = new Date(from)
+  a.setHours(0, 0, 0, 0)
+  const b = new Date(now)
+  b.setHours(0, 0, 0, 0)
+  // 서머타임이 있는 지역에서는 하루가 23시간일 수 있어 반올림합니다.
+  return Math.max(0, Math.round((b.getTime() - a.getTime()) / 86_400_000))
+}
+
+/**
+ * 돌고 있는 시계 — '1:23:45' / '23:45'.
+ *
+ * 한 시간을 못 넘겼는데 '0:12:34' 로 두면 앞의 0 이 자리만 차지합니다.
+ * 초까지 보여 주는 것은 이게 지금 돌고 있다는 표시이기도 합니다.
+ */
+export function clock(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  const mm = String(m).padStart(2, '0')
+  const ss = String(s).padStart(2, '0')
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
+}

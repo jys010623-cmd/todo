@@ -272,7 +272,7 @@
 .block[data-dragging] {
   cursor: grabbing;
   z-index: 5;
-  box-shadow: 0 4px 14px rgba(55, 53, 47, 0.22);
+  box-shadow: var(--shadow-md);
 }
 
 /* 아래 모서리 — 여기만 잡으면 끝나는 시각이 바뀝니다. */
@@ -341,6 +341,23 @@
 /* 30분보다 짧은 일정은 두 줄이 안 들어갑니다 — 시각을 접고 제목만 남깁니다. */
 .block[data-short] .blockTime {
   display: none;
+}
+
+/*
+ * 겹쳐서 폭을 나눠 가진 칸.
+ *
+ * 안쪽 여백이 좌우로 20px 인데 칸이 57px 이면 글자가 쓸 자리는 37px 뿐입니다 —
+ * 한 줄에 세 자가 안 들어가 제목이 글자 무더기처럼 내려앉습니다. 좁을 때만
+ * 여백을 줄여 그 자리를 글자에 돌려줍니다.
+ */
+.block[data-narrow] {
+  padding-right: var(--s1);
+  padding-left: var(--s2);
+}
+
+/* 어절 안에서 끊지 않습니다 — '생일' 이 '생 / 일' 로 갈라지면 읽는 눈이 걸립니다. */
+.block[data-narrow] .blockTitle {
+  word-break: keep-all;
 }
 
 .block[data-short] {

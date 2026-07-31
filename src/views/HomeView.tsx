@@ -2,10 +2,16 @@ import { useMemo } from 'react'
 
 import { ProgressBar } from '@/components/common/ProgressBar'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { formatDateLong, formatMinutes, formatTime, todayISO, weekDays } from '@/lib/date'
+import { daysSince, formatDateLong, formatMinutes, formatTime, todayISO, weekDays } from '@/lib/date'
 import { usePlanner } from '@/store/PlannerContext'
 import type { ViewId } from '@/types'
 import styles from './HomeView.module.css'
+
+/** 이만큼 지나면 한 번 챙기라고 말합니다 — 한 달에 한 번이면 잔소리가 되지 않습니다. */
+const BACKUP_STALE_DAYS = 30
+
+/** 이보다 적게 적혀 있으면 잃을 것도 적습니다 — 시작하자마자 백업하라고 하지 않습니다. */
+const BACKUP_MIN_ITEMS = 10
 
 /**
  * 홈은 '오늘' 을 다시 보여주는 자리가 아닙니다.
@@ -56,6 +62,21 @@ export function HomeView() {
   const mindNodes = mindmaps.reduce((sum, m) => sum + m.nodes.length, 0)
   const runningSubject = timer ? subjects.find((s) => s.id === timer.subjectId) : undefined
 
+  /**
+   * 백업이 오래됐는지.
+   *
+   * 설정 안에만 적어 두면 아무도 안 봅니다 — 설정은 무언가 고치려 할 때나 여는 자리라,
+   * 정작 '잃을 것이 쌓였다' 는 신호는 여기서 나야 합니다. 적어 둔 것이 없으면
+   * 잃을 것도 없으니 조용히 있습니다.
+   */
+  const backup = useMemo(() => {
+    const worth = data.events.length + data.todos.length + goals.length + mandals.length
+    if (worth < BACKUP_MIN_ITEMS) return null
+    if (settings.exportedAt === undefined) return { days: null }
+    const days = daysSince(settings.exportedAt, Date.now())
+    return days >= BACKUP_STALE_DAYS ? { days } : null
+  }, [data.events.length, data.todos.length, goals.length, mandals.length, settings.exportedAt])
+
   const isEmpty =
     events.length === 0 &&
     todos.length === 0 &&
@@ -90,17 +111,29 @@ export function HomeView() {
                 <button
                   type="button"
                   className={styles.action}
-                  onClick={(e) => {
-                    e.stopPropagation()
+                  onClick={() =>
                     dispatch({
                       type: 'MOVE_TODOS',
                       ids: overdueTodos.map((t) => t.id),
                       date: today,
                     })
-                  }}
+                  }
                 >
                   전부 오늘로
                 </button>
+              </Card>
+            )}
+
+            {backup && (
+              <Card view="settings" onGo={setView} title="백업">
+                <p className={styles.big}>
+                  {backup.days === null ? '없음' : `${backup.days}일`}
+                </p>
+                <p className={styles.sub}>
+                  {backup.days === null
+                    ? '한 번도 내려받지 않았습니다 — 이 브라우저에만 있습니다'
+                    : '전에 내려받았습니다 — 이 브라우저에만 있습니다'}
+                </p>
               </Card>
             )}
 
@@ -207,14 +240,20 @@ interface CardProps {
 
 function Card({ title, view, onGo, accent, children }: CardProps) {
   return (
-    <button
-      type="button"
-      className={styles.card}
-      data-accent={accent || undefined}
-      onClick={() => onGo(view)}
-    >
+    <div className={styles.card} data-accent={accent || undefined}>
+      {/*
+       * 카드 전체가 눌리되 버튼 안에 버튼이 들어가지 않도록, 누르는 자리를 카드 위에
+       * 한 겹 펴 둡니다. 카드가 곧 버튼이면 '전부 오늘로' 가 그 안에 들어가는데,
+       * 버튼 안의 버튼은 브라우저마다 다르게 다루고 스크린리더는 안쪽에 닿지 못합니다.
+       */}
+      <button
+        type="button"
+        className={styles.cardGo}
+        aria-label={`${title} 화면으로`}
+        onClick={() => onGo(view)}
+      />
       <span className={styles.cardTitle}>{title}</span>
-      <span className={styles.cardBody}>{children}</span>
-    </button>
+      <div className={styles.cardBody}>{children}</div>
+    </div>
   )
 }

@@ -1,0 +1,81 @@
+.timing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+/* 평소에는 글자 한 줄로만 읽히게 — 눌러야 눌리는 자리인 것이 보입니다. */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-left: calc(var(--s1) * -1);
+  padding: 1px var(--s1);
+  border-radius: var(--r-xs);
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.toggle:hover {
+  background: var(--hover);
+}
+
+.time {
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.repeat {
+  padding: 0 var(--s1);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  background: var(--surface-sunken);
+  white-space: nowrap;
+}
+
+.skips {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+
+.skipLabel {
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+/* 빠져 있는 날이라는 것이 보이게 — 글자에 줄을 긋고, 누르면 되살아납니다. */
+.skip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: 2px var(--s2);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  background: var(--surface-sunken);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-decoration: line-through;
+  text-decoration-color: var(--text-4);
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.skip:hover {
+  color: var(--text-1);
+  background: var(--press);
+  text-decoration: none;
+}
+
+.skipUndo {
+  text-decoration: none;
+  color: var(--accent);
+}

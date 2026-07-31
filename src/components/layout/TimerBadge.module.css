@@ -1,0 +1,85 @@
+.badge {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  margin-bottom: var(--s3);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+  text-align: left;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.badge:hover {
+  background: var(--press);
+}
+
+/*
+ * 돌고 있다는 것을 색만으로는 말할 수 없어 — 멈춘 점과 도는 점이 같아 보입니다 —
+ * 아주 옅게 숨 쉬게 둡니다. 움직임을 꺼 둔 기기에서는 전역 규칙이 멈춰 세웁니다.
+ */
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  animation: breathe 2s var(--ease) infinite;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-cap);
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clock {
+  flex: none;
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-semibold);
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 쉬는 동안은 공부 시간으로 세지 않습니다 — 숫자도 한 걸음 물러납니다. */
+.badge[data-resting] .clock {
+  color: var(--text-3);
+  font-weight: var(--fw-medium);
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/*
+ * 좁은 화면에서는 아래 막대 바로 위에 한 줄로 붙습니다.
+ * 막대 안에 끼워 넣으면 다섯 칸이 다시 좁아지고, 화면 가운데 띄우면 본문을 가립니다.
+ */
+@media (max-width: 768px) {
+  .badge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    z-index: 1;
+    width: auto;
+    margin: 0;
+    padding: var(--s1) var(--s4);
+    border-radius: 0;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    /* 한 덩어리로 가운데에 — 폭이 넓어도 양 끝으로 벌어지지 않게 합니다. */
+    justify-content: center;
+  }
+
+  .name {
+    flex: 0 1 auto;
+    max-width: 60%;
+  }
+}

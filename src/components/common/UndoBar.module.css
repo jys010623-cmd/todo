@@ -13,7 +13,7 @@
   padding: var(--s2) var(--s2) var(--s2) var(--s4);
   border-radius: var(--r-full);
   background: var(--text-1);
-  box-shadow: 0 6px 24px rgba(55, 53, 47, 0.18);
+  box-shadow: var(--shadow-lg);
   transform: translateX(-50%);
   animation: rise var(--dur) var(--ease);
   /*
@@ -51,12 +51,17 @@
   font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
   color: var(--today-contrast);
-  background: rgba(255, 255, 255, 0.16);
+  /*
+   * 이 막대는 지면 색을 뒤집은 먹면이라, 어두운 테마에서는 밝은 면이 됩니다.
+   * 흰색을 얹으면 그때 아무것도 안 보이므로, 글자와 같은 색을 옅게 깝니다 —
+   * 글자색이 뒤집히면 이 칠도 함께 뒤집힙니다.
+   */
+  background: color-mix(in srgb, var(--today-contrast) 16%, transparent);
   transition: background-color var(--dur-fast) var(--ease);
 }
 
 .action:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: color-mix(in srgb, var(--today-contrast) 28%, transparent);
 }
 
 .close {

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 
 import { Segmented } from '@/components/common/Segmented'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { todayISO } from '@/lib/date'
+import { daysSince, todayISO } from '@/lib/date'
 import { parseData } from '@/lib/storage'
 import { createInitialData } from '@/store/initial'
 import { usePlanner } from '@/store/PlannerContext'
@@ -78,6 +78,8 @@ export function SettingsView() {
     a.download = `planme-${todayISO()}.json`
     a.click()
     URL.revokeObjectURL(url)
+    // 언제 챙겼는지 남겨 둡니다 — 이걸 알아야 '너무 오래됐다' 고 말해 줄 수 있습니다.
+    dispatch({ type: 'SET_SETTINGS', patch: { exportedAt: Date.now() } })
   }
 
   const importData = async (file: File) => {
@@ -256,6 +258,17 @@ export function SettingsView() {
             <p className={styles.labelBody}>
               기록은 이 브라우저에만 있습니다. 방문 기록을 지우거나 브라우저를 바꾸면 함께
               사라지니, 가끔 파일로 내려받아 두세요. 가져오면 지금 기록을 덮어씁니다.
+            </p>
+            {/* 마지막으로 챙긴 때 — 이게 없으면 '가끔' 이 영영 안 옵니다. */}
+            <p className={styles.labelBody}>
+              {settings.exportedAt === undefined
+                ? '아직 한 번도 내보내지 않았습니다.'
+                : (() => {
+                    const days = daysSince(settings.exportedAt, Date.now())
+                    return days === 0
+                      ? '마지막으로 내보낸 것 — 오늘.'
+                      : `마지막으로 내보낸 것 — ${days}일 전.`
+                  })()}
             </p>
             {importMsg && (
               <p className={styles.note} data-error={!importMsg.ok || undefined}>

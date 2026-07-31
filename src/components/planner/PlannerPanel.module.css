@@ -73,13 +73,6 @@
   overflow-wrap: anywhere;
 }
 
-.time {
-  font-size: var(--fs-cap);
-  line-height: 1.4;
-  color: var(--text-3);
-  font-variant-numeric: tabular-nums;
-}
-
 .todoTitle {
   flex: 1;
   min-width: 0;

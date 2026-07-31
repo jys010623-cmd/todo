@@ -26,14 +26,18 @@
   margin-bottom: var(--s5);
 }
 
+/*
+ * 홈 카드와 같은 판단입니다 — 테두리로 구분하지 않습니다.
+ * 지면과 카드가 둘 다 옅은데 그 사이에 선까지 그으면 목록이 촘촘해 보이고,
+ * 목표는 원래 하나씩 들여다보는 것입니다. 면 하나와 사이 여백이면 충분합니다.
+ */
 .goal {
   display: flex;
   flex-direction: column;
   gap: var(--s2);
   min-width: 0;
   padding: var(--s5);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   background: var(--surface-card);
 }
 

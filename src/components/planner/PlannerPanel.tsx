@@ -2,10 +2,12 @@ import { Checkbox } from '@/components/common/Checkbox'
 import { InlineAdd } from '@/components/common/InlineAdd'
 import { SectionHeader } from '@/components/common/SectionHeader'
 import { InlineEdit } from '@/components/common/InlineEdit'
-import { formatDateLong, formatTime, todayISO } from '@/lib/date'
-import { eventToInput, inputToEventPatch, inputToNewEvent, nextTag } from '@/lib/entry'
+import { formatDateLong, todayISO } from '@/lib/date'
+import { nextTag } from '@/lib/entry'
 import { tagVar } from '@/lib/tag'
 import { usePlanner } from '@/store/PlannerContext'
+import { EventAdd, draftToEvents } from './EventAdd'
+import { EventTiming } from './EventTiming'
 import styles from './PlannerPanel.module.css'
 
 export function PlannerPanel() {
@@ -35,23 +37,13 @@ export function PlannerPanel() {
                 <div className={styles.rowBody}>
                   <InlineEdit
                     value={e.title}
-                    editValue={eventToInput(e)}
                     label={e.title}
                     className={styles.rowTitle}
-                    onCommit={(next) =>
-                      dispatch({
-                        type: 'UPDATE_EVENT',
-                        id: e.sourceId,
-                        patch: inputToEventPatch(next, e.repeat),
-                      })
+                    onCommit={(title) =>
+                      dispatch({ type: 'UPDATE_EVENT', id: e.sourceId, patch: { title } })
                     }
                   />
-                  {e.start && (
-                    <span className={styles.time}>
-                      {formatTime(e.start, data.settings.hour12)}
-                      {e.end ? ` – ${formatTime(e.end, data.settings.hour12)}` : ''}
-                    </span>
-                  )}
+                  <EventTiming event={e} />
                 </div>
                 <button
                   type="button"
@@ -73,20 +65,18 @@ export function PlannerPanel() {
           </ul>
         )}
 
-        <InlineAdd
-          label="일정 추가"
-          placeholder="10:00 팀 회의 매주"
-          onSubmit={(value) => {
-            const { start, title, repeat } = inputToNewEvent(value)
-            dispatch({
-              type: 'ADD_EVENT',
-              date: selectedDate,
-              title,
-              start,
-              repeat,
-              tag: nextTag(events.length),
-            })
-          }}
+        <EventAdd
+          date={selectedDate}
+          onSubmit={(draft) =>
+            // 고른 날마다 하나씩 — 날짜만 다르고 나머지는 같습니다.
+            draftToEvents(draft).forEach((event) =>
+              dispatch({
+                type: 'ADD_EVENT',
+                ...event,
+                tag: event.tag ?? nextTag((eventsByDate.get(event.date) ?? []).length),
+              }),
+            )
+          }
         />
       </section>
 

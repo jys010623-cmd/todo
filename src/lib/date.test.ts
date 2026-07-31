@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   addDays,
   addMonths,
+  clock,
+  daysSince,
   formatMinutes,
   formatTime,
   monthGrid,
@@ -134,5 +136,52 @@ describe('timeToMinutes', () => {
     expect(timeToMinutes('00:00')).toBe(0)
     expect(timeToMinutes('09:30')).toBe(570)
     expect(timeToMinutes('23:59')).toBe(1439)
+  })
+})
+
+describe('daysSince', () => {
+  const at = (iso: string) => new Date(iso).getTime()
+
+  it('같은 날이면 0', () => {
+    expect(daysSince(at('2026-07-31T01:00'), at('2026-07-31T23:00'))).toBe(0)
+  })
+
+  it('밤을 넘기면 시간 차가 적어도 하루', () => {
+    // 두 시간 차이지만 사람에게는 어제와 오늘입니다.
+    expect(daysSince(at('2026-07-30T23:00'), at('2026-07-31T01:00'))).toBe(1)
+  })
+
+  it('날짜만큼 센다', () => {
+    expect(daysSince(at('2026-07-01T09:00'), at('2026-07-31T09:00'))).toBe(30)
+  })
+
+  it('앞선 시각(미래)이면 0 — 음수 일수는 뜻이 없습니다', () => {
+    expect(daysSince(at('2026-08-10T09:00'), at('2026-07-31T09:00'))).toBe(0)
+  })
+})
+
+describe('clock', () => {
+  const s = 1000
+  const m = 60 * s
+
+  it('한 시간을 못 넘기면 분:초', () => {
+    expect(clock(0)).toBe('00:00')
+    expect(clock(9 * s)).toBe('00:09')
+    expect(clock(23 * m + 45 * s)).toBe('23:45')
+    expect(clock(59 * m + 59 * s)).toBe('59:59')
+  })
+
+  it('넘기면 시:분:초 — 앞의 0 은 붙이지 않는다', () => {
+    expect(clock(60 * m)).toBe('1:00:00')
+    expect(clock(83 * m + 45 * s)).toBe('1:23:45')
+  })
+
+  it('초 아래는 버린다 — 올리면 00:00 에서 시작하지 않습니다', () => {
+    expect(clock(999)).toBe('00:00')
+    expect(clock(1999)).toBe('00:01')
+  })
+
+  it('음수는 0 으로 — 뽀모도로가 끝나는 순간 잠깐 넘어갑니다', () => {
+    expect(clock(-5000)).toBe('00:00')
   })
 })

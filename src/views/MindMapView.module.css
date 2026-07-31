@@ -115,7 +115,7 @@
 .node[data-dragging] {
   cursor: grabbing;
   z-index: 2;
-  box-shadow: 0 6px 20px rgba(55, 53, 47, 0.16);
+  box-shadow: var(--shadow-md);
 }
 
 /* 여기 떨어뜨리면 이 노드 밑으로 들어간다는 표시 */
@@ -244,8 +244,9 @@
   opacity: 0.75;
 }
 
+/* 루트는 액센트로 칠해져 있습니다 — 그 위 글자색을 옅게 깔면 액센트가 무엇이든 따라옵니다. */
 .node[data-root] .tool:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: color-mix(in srgb, var(--accent-contrast) 18%, transparent);
   opacity: 1;
 }
 

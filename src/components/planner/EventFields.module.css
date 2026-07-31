@@ -1,0 +1,102 @@
+.fields {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  flex-wrap: wrap;
+}
+
+.field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+}
+
+/* 시작이 없으면 끝은 고를 수 없습니다 — 눌러 보기 전에 알아채도록 흐려 둡니다. */
+.field[data-off] {
+  opacity: 0.55;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+.input,
+.select {
+  padding: 2px var(--s2);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-cap);
+  color: var(--text-1);
+  background: var(--surface-sunken);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.input:hover:enabled,
+.select:hover {
+  background: var(--press);
+}
+
+.input:disabled {
+  cursor: default;
+  color: var(--text-4);
+}
+
+.weekdays {
+  display: flex;
+  gap: 2px;
+}
+
+/* 일곱 개가 나란히 — 글자 한 자씩이라 좁아도 다 들어갑니다. */
+.weekday {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-xs);
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  background: var(--surface-sunken);
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.weekday:hover {
+  color: var(--text-1);
+  background: var(--press);
+}
+
+.weekday[data-on] {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  font-weight: var(--fw-semibold);
+}
+
+/* 마지막 하나 — 끄면 아무 날에도 안 오게 되어 눌리지 않습니다. */
+.weekday:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+/* 안 정해도 된다는 것을 조용히 알립니다. */
+.hint {
+  font-size: var(--fs-cap);
+  color: var(--text-4);
+  white-space: nowrap;
+}
+
+/* 지우는 것은 손이 미끄러져 되는 일이 아니라 눌러야 되는 일입니다. */
+.clear {
+  padding: 0 var(--s1);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-cap);
+  color: var(--text-4);
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.clear:hover {
+  color: var(--text-2);
+}

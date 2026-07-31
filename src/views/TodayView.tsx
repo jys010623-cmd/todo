@@ -4,8 +4,10 @@ import { InlineEdit } from '@/components/common/InlineEdit'
 import { ProgressBar } from '@/components/common/ProgressBar'
 import { SectionHeader } from '@/components/common/SectionHeader'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { EventAdd, draftToEvents } from '@/components/planner/EventAdd'
+import { EventTiming } from '@/components/planner/EventTiming'
 import { formatDateLong, formatDateShort, formatMinutes, formatTime, todayISO } from '@/lib/date'
-import { eventToInput, inputToEventPatch, inputToNewEvent, nextTag } from '@/lib/entry'
+import { nextTag } from '@/lib/entry'
 import { tagVar } from '@/lib/tag'
 import { usePlanner } from '@/store/PlannerContext'
 import styles from './TodayView.module.css'
@@ -59,22 +61,13 @@ export function TodayView() {
                     <div className={styles.slotBody}>
                       <InlineEdit
                         value={e.title}
-                        editValue={eventToInput(e)}
                         label={e.title}
                         className={styles.slotTitle}
-                        onCommit={(next) =>
-                          dispatch({
-                            type: 'UPDATE_EVENT',
-                            id: e.sourceId,
-                            patch: inputToEventPatch(next, e.repeat),
-                          })
+                        onCommit={(title) =>
+                          dispatch({ type: 'UPDATE_EVENT', id: e.sourceId, patch: { title } })
                         }
                       />
-                      {e.end && (
-                        <span className={styles.slotEnd}>
-                          ~ {formatTime(e.end, data.settings.hour12)}
-                        </span>
-                      )}
+                      <EventTiming event={e} />
                     </div>
                     <button
                       type="button"
@@ -97,20 +90,18 @@ export function TodayView() {
               <p className={styles.empty}>비어 있는 하루입니다.</p>
             )}
 
-            <InlineAdd
-              label="일정 추가"
-              placeholder="10:00 팀 회의 매주"
-              onSubmit={(value) => {
-                const { start, title, repeat } = inputToNewEvent(value)
-                dispatch({
-                  type: 'ADD_EVENT',
-                  date: today,
-                  title,
-                  start,
-                  repeat,
-                  tag: nextTag(events.length),
-                })
-              }}
+            <EventAdd
+              date={today}
+              onSubmit={(draft) =>
+                // 고른 날마다 하나씩 — 날짜만 다르고 나머지는 같습니다.
+                draftToEvents(draft).forEach((event) =>
+                  dispatch({
+                    type: 'ADD_EVENT',
+                    ...event,
+                    tag: event.tag ?? nextTag((eventsByDate.get(event.date) ?? []).length),
+                  }),
+                )
+              }
             />
           </section>
 

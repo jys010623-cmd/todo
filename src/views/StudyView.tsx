@@ -6,7 +6,7 @@ import { InlineEdit } from '@/components/common/InlineEdit'
 import { ProgressBar } from '@/components/common/ProgressBar'
 import { SectionHeader } from '@/components/common/SectionHeader'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { formatMinutes, formatWeekRange, todayISO, weekDays } from '@/lib/date'
+import { clock, formatMinutes, formatWeekRange, todayISO, weekDays } from '@/lib/date'
 import { nextTag } from '@/lib/entry'
 import { tagVar } from '@/lib/tag'
 import { usePlanner } from '@/store/PlannerContext'
@@ -51,16 +51,6 @@ function beep() {
   }
 }
 
-/** 흘러간 시간을 '1:23:45' / '23:45' 로 */
-function clock(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000))
-  const h = Math.floor(total / 3600)
-  const m = Math.floor((total % 3600) / 60)
-  const s = total % 60
-  const mm = String(m).padStart(2, '0')
-  const ss = String(s).padStart(2, '0')
-  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
-}
 
 export function StudyView() {
   const { data, dispatch } = usePlanner()

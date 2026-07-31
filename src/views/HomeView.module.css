@@ -26,6 +26,7 @@
  * 면 하나와 넉넉한 여백이면 충분하고, 그림자는 올렸을 때만 잠깐 씁니다.
  */
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--s2);
@@ -41,7 +42,8 @@
 
 .card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 10px rgba(28, 28, 30, 0.07);
+  /* 그림자는 테마마다 값이 다릅니다 — 어두운 지면에서도 뜨도록 토큰이 알아서 바꿉니다. */
+  box-shadow: var(--shadow-sm);
 }
 
 /* 밀린 할 일처럼 먼저 눈에 들어와야 하는 것 */
@@ -49,14 +51,21 @@
   background: var(--accent-soft);
 }
 
-/* 어두운 테마에서는 그림자가 안 보입니다 — 면을 한 단계 띄웁니다. */
-:global([data-theme='dark']) .card:hover {
-  box-shadow: none;
-  background: var(--surface-sunken);
+/* 카드를 덮는 누르는 자리 — 보이지는 않고 넓이만 차지합니다. */
+.cardGo {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
 }
 
-:global([data-theme='dark']) .card[data-accent]:hover {
-  background: var(--accent-soft);
+/*
+ * 글은 누르는 자리 위로 올리되 클릭은 통과시킵니다 — 그래야 글자 위를 눌러도
+ * 카드가 눌립니다. 안쪽 버튼만 클릭을 도로 받습니다(되돌리기 막대와 같은 방식).
+ */
+.cardTitle,
+.cardBody {
+  position: relative;
+  pointer-events: none;
 }
 
 /* 제목은 이름표일 뿐입니다 — 자간을 벌리지 않고 조용히 둡니다. */
@@ -72,6 +81,10 @@
   flex-direction: column;
   gap: var(--s2);
   min-width: 0;
+}
+
+.cardBody button {
+  pointer-events: auto;
 }
 
 .big {

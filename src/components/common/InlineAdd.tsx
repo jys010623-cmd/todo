@@ -45,6 +45,8 @@ export function InlineAdd({ label, placeholder, onSubmit }: Props) {
       placeholder={placeholder ?? label}
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={(e) => {
+        // 한글은 조합하는 동안에도 Enter 가 옵니다 — 그때 넣으면 쓰다 만 글이 들어갑니다.
+        if (e.nativeEvent.isComposing) return
         if (e.key === 'Enter') commit()
         if (e.key === 'Escape') {
           setValue('')

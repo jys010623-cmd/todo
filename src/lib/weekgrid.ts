@@ -27,6 +27,9 @@ export interface TimedSlot<E extends PlanEvent = PlanEvent> {
   column: number
   /** 그 묶음이 몇 칸으로 나뉘는지 */
   columns: number
+  /** 열 안에서의 가로 자리 (%) */
+  left: number
+  width: number
 }
 
 /** 'HH:MM' 이 아니거나 범위를 벗어나면 null — 저장된 값이 깨져도 그리기는 멈추지 않습니다. */
@@ -73,13 +76,45 @@ export function layoutDay<E extends PlanEvent>(events: E[]): TimedSlot<E>[] {
   const flush = () => {
     if (cluster.length === 0) return
     const columns = columnEnds.length
+    const lane = 100 / columns
+
     cluster.forEach((item, i) => {
+      const column = columnOf[i]
+
+      /*
+       * 오른쪽으로 넓힐 수 있는 만큼 넓힙니다.
+       *
+       * 폭을 칸 수로 똑같이 나누기만 하면 둘만 겹쳐도 한 칸이 절반(주간 열에서
+       * 57px)이 되어 제목이 한 어절씩 내려앉습니다. 그렇다고 뒤엣것을 왼쪽으로
+       * 밀어 얹으면 앞엣것의 제목을 덮어 버립니다.
+       *
+       * 그래서 왼쪽으로는 밀지 않고 오른쪽으로만 뻗습니다. 뒤 칸이 위에 얹히므로,
+       * 나보다 '늦게' 시작하는 것 밑으로 뻗는 것은 아무것도 가리지 않습니다 —
+       * 내 글은 그것이 시작하기 전(더 위)에 있습니다. 같은 시각에 시작하는 것을
+       * 만나면 거기서 멈춥니다. 뻗어 봐야 처음부터 덮여 제목만 반쯤 잘립니다.
+       */
+      let span = 1
+      for (let c = column + 1; c < columns; c++) {
+        const blocked = cluster.some(
+          (other, j) =>
+            columnOf[j] === c &&
+            // 시간이 겹치면서 나보다 먼저이거나 같이 시작하는 것
+            other.start < item.end &&
+            item.start < other.end &&
+            other.start <= item.start,
+        )
+        if (blocked) break
+        span++
+      }
+
       slots.push({
         event: item.event,
         top: (item.start / 60) * HOUR_H,
         height: ((item.end - item.start) / 60) * HOUR_H,
-        column: columnOf[i],
+        column,
         columns,
+        left: column * lane,
+        width: span * lane,
       })
     })
     cluster = []

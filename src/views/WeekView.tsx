@@ -14,8 +14,7 @@ import {
   weekDays,
   weekdayLabel,
 } from '@/lib/date'
-import { eventToInput, inputToEventPatch, nextTag } from '@/lib/entry'
-import { parseRepeatSuffix } from '@/lib/repeat'
+import { nextTag } from '@/lib/entry'
 import { tagSoftVar, tagTextVar, tagVar } from '@/lib/tag'
 import {
   HOUR_H,
@@ -49,8 +48,37 @@ export function WeekView() {
    * 끄는 동안의 모습. 매 움직임마다 dispatch 하면 저장까지 따라와 판이 버벅입니다.
    * 손을 뗄 때 한 번만 넘기고, 그전까지는 여기서 그립니다.
    */
-  type Dragging = {
+  /**
+   * 끌기를 시작한 순간의 원본.
+   *
+   * 끄는 동안 그 자리에 그려지는 것은 미리보기입니다. 거기서 값을 다시 읽으면
+   * 옮긴 만큼이 매번 새로 더해져 손보다 몇 배씩 달아나고, 반복에서 펼쳐진
+   * 것인지도 알 수 없게 됩니다. 기준은 처음 한 번만 잡고 끝까지 그것을 씁니다.
+   */
+  type DragOrigin = {
+    /** 고칠 원본 일정 */
     id: string
+    /** 화면에 그려지던 그 조각 — 키가 바뀌면 끌던 요소가 통째로 다시 붙습니다. */
+    occurrenceId: string
+    /** 반복에서 펼쳐 나온 것인지 — 미리보기를 원래 모습대로 그리는 데 씁니다. */
+    virtual: boolean
+    /**
+     * 반복이 걸린 일정인지 — 그렇다면 요일은 고정입니다.
+     *
+     * 반복은 '무슨 요일' 이 곧 규칙입니다. 옆으로 끌어 날짜를 바꾸면 원본 날짜가
+     * 바뀌면서 시리즈 전체가 다른 요일로 밀립니다 — 하루를 옮기려던 손짓이 조용히
+     * 전부를 옮깁니다(되돌리기 대상도 아닙니다).
+     *
+     * '펼쳐진 날' 만 막으면 원본 날짜에서 그대로 빠져나갑니다. 그러면 같은 일정이
+     * 어떤 날은 옆으로 가고 어떤 날은 안 가서, 규칙이 아니라 변덕처럼 보입니다.
+     */
+    repeats: boolean
+    fromDate: string
+    fromStart: string
+    fromEnd?: string
+  }
+
+  type Dragging = DragOrigin & {
     kind: 'move' | 'resize'
     /** 끄는 동안 그려 줄 열 */
     date: string
@@ -128,14 +156,12 @@ export function WeekView() {
     const title = draft.trim()
     if (composing && title) {
       const dayEvents = eventsByDate.get(composing.date) ?? []
-      // 시간은 누른 자리가 정하므로, 적은 글에서는 반복만 읽습니다.
-      const { title: plain, freq } = parseRepeatSuffix(title)
+      // 시간은 누른 자리가 정합니다. 반복은 오른쪽 패널의 일정 줄에서 고릅니다.
       dispatch({
         type: 'ADD_EVENT',
         date: composing.date,
-        title: plain,
+        title,
         start: timeAt(composing.minutes),
-        repeat: freq ? { freq } : undefined,
         tag: nextTag(dayEvents.length),
       })
     }
@@ -235,15 +261,11 @@ export function WeekView() {
                     <span className={styles.chipBar} style={{ background: tagVar(e.tag) }} />
                     <InlineEdit
                       value={e.repeat ? `${e.title} ↻` : e.title}
-                      editValue={eventToInput(e)}
+                      editValue={e.title}
                       label={e.title}
                       className={styles.chipTitle}
-                      onCommit={(next) =>
-                        dispatch({
-                          type: 'UPDATE_EVENT',
-                          id: e.sourceId,
-                          patch: inputToEventPatch(next, e.repeat),
-                        })
+                      onCommit={(title) =>
+                        dispatch({ type: 'UPDATE_EVENT', id: e.sourceId, patch: { title } })
                       }
                     />
                     <button
@@ -312,7 +334,12 @@ export function WeekView() {
                */
               let timed = (eventsByDate.get(date) ?? []).filter(isTimed)
               if (dragging) {
-                timed = timed.filter((e) => e.sourceId !== dragging.id)
+                /*
+                 * 끌고 있는 그 조각만 뺍니다.
+                 * sourceId 로 빼면 매일 반복이 걸린 일정은 이레 치가 한꺼번에
+                 * 사라져, 하나를 옮기는 동안 판이 텅 비어 보입니다.
+                 */
+                timed = timed.filter((e) => e.id !== dragging.occurrenceId)
                 if (dragging.date === date) {
                   const source = data.events.find((e) => e.id === dragging.id)
                   if (source) {
@@ -320,16 +347,23 @@ export function WeekView() {
                       ...timed,
                       {
                         ...source,
+                        // 키를 그대로 둡니다 — 바뀌면 끌던 요소가 다시 붙어 손을 놓칩니다.
+                        id: dragging.occurrenceId,
+                        date,
                         start: dragging.start,
                         end: dragging.end,
                         sourceId: source.id,
-                        virtual: false,
+                        virtual: dragging.virtual,
                       },
                     ]
                   }
                 }
               }
-              const slots = layoutDay(timed)
+              /*
+               * 뒤로 밀린 칸이 위에 얹혀야 겹친 자리가 제대로 보입니다.
+               * 모두 같은 z-index 라 그리는 차례가 곧 위아래입니다.
+               */
+              const slots = layoutDay(timed).sort((a, b) => a.column - b.column)
               const composingHere = composing?.date === date
 
               return (
@@ -364,28 +398,47 @@ export function WeekView() {
                       key={slot.event.id}
                       slot={slot}
                       hour12={hour12}
-                      dragging={dragging?.id === slot.event.id}
+                      dragging={dragging?.occurrenceId === slot.event.id}
                       onDrag={(kind, dy, clientX) => {
                         const e = slot.event
+                        /*
+                         * 두 번째 움직임부터 slot.event 는 미리보기입니다.
+                         * 처음 한 번 잡아 둔 원본을 끝까지 기준으로 씁니다.
+                         */
+                        const from: DragOrigin = draggingRef.current ?? {
+                          // 반복이라도 시간은 원본이 들고 있으므로 sourceId 로 고칩니다.
+                          id: e.sourceId,
+                          occurrenceId: e.id,
+                          virtual: e.virtual,
+                          repeats: Boolean(e.repeat),
+                          fromDate: e.date,
+                          fromStart: e.start as string,
+                          fromEnd: e.end,
+                        }
                         const delta = snapDelta(dy)
-                        // 반복이라도 시간은 원본이 들고 있으므로 sourceId 로 고칩니다.
+
                         if (kind === 'resize') {
                           setDrag({
-                            id: e.sourceId,
+                            ...from,
                             kind,
-                            date: e.date,
-                            start: e.start as string,
-                            end: resizedEnd(e.start as string, e.end, delta),
+                            date: from.fromDate,
+                            start: from.fromStart,
+                            end: resizedEnd(from.fromStart, from.fromEnd, delta),
                           })
                           return
                         }
-                        const moved = movedTimes(e.start as string, e.end, delta)
-                        const to = e.virtual ? date : (dayUnder(clientX) ?? date)
+
+                        const moved = movedTimes(from.fromStart, from.fromEnd, delta)
+                        // 반복은 요일이 곧 규칙이라 옆으로는 가지 않습니다 — 시각만 바뀝니다.
+                        const to = from.repeats
+                          ? from.fromDate
+                          : (dayUnder(clientX) ?? from.fromDate)
                         setDrag({
-                          id: e.sourceId,
+                          ...from,
                           kind,
                           date: to,
-                          commitDate: e.virtual ? undefined : to,
+                          // 반복에서 펼쳐진 날은 원본 날짜를 건드리면 시리즈가 통째로 밀립니다.
+                          commitDate: from.virtual ? undefined : to,
                           ...moved,
                         })
                       }}
@@ -402,11 +455,11 @@ export function WeekView() {
                         })
                         setDrag(null)
                       }}
-                      onCommit={(next) =>
+                      onCommit={(title) =>
                         dispatch({
                           type: 'UPDATE_EVENT',
                           id: slot.event.sourceId,
-                          patch: inputToEventPatch(next, slot.event.repeat),
+                          patch: { title },
                         })
                       }
                       onDelete={() =>
@@ -469,20 +522,34 @@ interface BlockProps {
 }
 
 function EventBlock({ slot, hour12, dragging, onDrag, onDragEnd, onCommit, onDelete }: BlockProps) {
-  const { event, top, height, column, columns } = slot
-  const width = 100 / columns
+  const { event, top, height, left, width } = slot
+  /*
+   * 열을 다 쓰지 못하는 칸. 남는 자리에 '19:00 – 21:00' 이 들어가지 않고
+   * '19:00 –' 로 잘립니다. 잘린 범위는 읽을 수도 없으면서 제목이 쓸 줄만 한 줄
+   * 빼앗아 갑니다 — 그럴 바에는 시작 시각만 둡니다. 끝나는 시각은 오른쪽 패널과
+   * 블록 높이가 이미 말해 줍니다.
+   */
+  const narrow = width < 99.9
 
   /**
    * 끌기와 '눌러서 고치기' 가 같은 자리에서 일어납니다.
    * 몇 px 이상 움직였을 때만 끌기로 보고, 그때는 뒤따라오는 click 을 막습니다.
    */
-  const grab = useRef<{ y: number; kind: 'move' | 'resize'; moved: boolean } | null>(null)
+  const grab = useRef<{ x: number; y: number; kind: 'move' | 'resize'; moved: boolean } | null>(
+    null,
+  )
   const draggedRef = useRef(false)
 
   const start = (kind: 'move' | 'resize') => (e: React.PointerEvent) => {
     // 제목은 잡아 끌 수 있어야 하지만, 고치려고 연 입력은 그대로 둡니다.
-    if ((e.target as HTMLElement).closest('input, [data-no-drag]')) return
-    grab.current = { y: e.clientY, kind, moved: false }
+    if ((e.target as HTMLElement).closest('textarea, input, [data-no-drag]')) return
+    /*
+     * 아래 손잡이는 블록 안에 있습니다. 여기서 막지 않으면 블록의 pointerdown 이
+     * 뒤이어 돌면서 방금 잡은 'resize' 를 'move' 로 덮어씁니다 — 끝만 늘리려던 것이
+     * 통째로 밀려 내려갑니다.
+     */
+    e.stopPropagation()
+    grab.current = { x: e.clientX, y: e.clientY, kind, moved: false }
     try {
       e.currentTarget.setPointerCapture(e.pointerId)
     } catch {
@@ -494,8 +561,12 @@ function EventBlock({ slot, hour12, dragging, onDrag, onDragEnd, onCommit, onDel
     const g = grab.current
     if (!g) return
     const dy = e.clientY - g.y
-    // 손이 조금 떨린 것까지 끌기로 보면 글자를 못 고칩니다.
-    if (!g.moved && Math.abs(dy) < 4) return
+    /*
+     * 손이 조금 떨린 것까지 끌기로 보면 글자를 못 고칩니다.
+     * 다만 가로도 함께 봐야 합니다 — 시각은 그대로 두고 옆 날로만 옮기는 것이
+     * 세로로는 한 픽셀도 안 움직이는 끌기라, 세로만 재면 그 동작이 통째로 막힙니다.
+     */
+    if (!g.moved && Math.abs(dy) < 4 && Math.abs(e.clientX - g.x) < 4) return
     g.moved = true
     onDrag(g.kind, dy, e.clientX)
   }
@@ -519,6 +590,7 @@ function EventBlock({ slot, hour12, dragging, onDrag, onDragEnd, onCommit, onDel
       data-event
       className={styles.block}
       data-short={height < HOUR_H * 0.7 || undefined}
+      data-narrow={narrow || undefined}
       data-dragging={dragging || undefined}
       onPointerDown={start('move')}
       onPointerMove={move}
@@ -532,7 +604,7 @@ function EventBlock({ slot, hour12, dragging, onDrag, onDragEnd, onCommit, onDel
       style={{
         top,
         height,
-        left: `${column * width}%`,
+        left: `${left}%`,
         width: `${width}%`,
         background: tagSoftVar(event.tag),
         color: tagTextVar(event.tag),
@@ -541,13 +613,12 @@ function EventBlock({ slot, hour12, dragging, onDrag, onDragEnd, onCommit, onDel
       <span className={styles.chipBar} style={{ background: tagVar(event.tag) }} />
       <span className={styles.blockTime}>
         {formatTime(event.start, hour12)}
-        {event.end ? ` – ${formatTime(event.end, hour12)}` : ''}
+        {!narrow && event.end ? ` – ${formatTime(event.end, hour12)}` : ''}
         {/* 반복인 줄 모르면 하나 지웠다가 다음 주에 또 나와 당황합니다. */}
         {event.repeat && <span className={styles.repeat}> ↻</span>}
       </span>
       <InlineEdit
         value={event.title}
-        editValue={eventToInput(event)}
         label={event.title}
         className={styles.blockTitle}
         onCommit={onCommit}

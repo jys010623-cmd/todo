@@ -1,0 +1,151 @@
+/* 닫혀 있을 때 — InlineAdd 와 같은 한 줄입니다. */
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  padding: var(--s2) 0;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+  text-align: left;
+  transition: color var(--dur) var(--ease);
+}
+
+.trigger:hover {
+  color: var(--text-2);
+}
+
+.plus {
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+  font-weight: var(--fw-regular);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s2) 0;
+}
+
+.title {
+  width: 100%;
+  padding: var(--s2) 0 var(--s2) var(--s6);
+  font-size: var(--fs-sm);
+  color: var(--text-1);
+  border-bottom: 1px solid var(--accent);
+}
+
+.title::placeholder {
+  color: var(--text-3);
+}
+
+/* 자주 적은 것 — 누르면 이름과 시간이 한 번에 채워집니다. */
+.presets {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  flex-wrap: wrap;
+  padding-left: var(--s6);
+}
+
+.preset {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 2px var(--s3);
+  border-radius: var(--r-full);
+  font-size: var(--fs-cap);
+  color: var(--text-2);
+  background: var(--surface-sunken);
+  white-space: nowrap;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.preset:hover {
+  background: var(--press);
+  color: var(--text-1);
+}
+
+.presetDot {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--r-full);
+}
+
+.dates {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  padding-left: var(--s6);
+}
+
+.dateLabel {
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+}
+
+.dateChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: 2px var(--s2);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-cap);
+  color: var(--text-1);
+  background: var(--accent-soft);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.dateRemove {
+  color: var(--text-3);
+  line-height: 1;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.dateRemove:hover {
+  color: var(--text-1);
+}
+
+.dateAdd {
+  padding: 2px var(--s2);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  background: var(--surface-sunken);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.dateAdd:hover {
+  background: var(--press);
+}
+
+/* 시간·반복 줄은 이름 칸의 글자와 같은 자리에서 시작합니다. */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  padding-left: var(--s6);
+}
+
+.submit {
+  flex: none;
+  padding: 2px var(--s4);
+  border-radius: var(--r-full);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-medium);
+  color: var(--accent-contrast);
+  background: var(--accent);
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.submit:hover {
+  opacity: 0.88;
+}

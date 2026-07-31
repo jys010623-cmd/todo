@@ -240,6 +240,27 @@ describe('설정 — 한 항목이 비어도 나머지가 살아야 한다', () 
     },
   )
 
+  it('내보낸 때는 그대로 지킨다', () => {
+    const at = new Date('2026-07-01T09:00').getTime()
+    expect(parse({ settings: { exportedAt: at } }).settings.exportedAt).toBe(at)
+  })
+
+  it.each([
+    ['없던 시절', undefined],
+    ['0', 0],
+    ['음수', -1],
+    ['숫자가 아님', 'yesterday'],
+    ['NaN', NaN],
+  ])('내보낸 때가 %s 이면 한 번도 안 내보낸 것으로', (_name, exportedAt) => {
+    expect(parse({ settings: { exportedAt } }).settings.exportedAt).toBeUndefined()
+  })
+
+  it('미래에서 내보낸 것으로 되어 있으면 지금으로 당긴다 — 며칠 전이 음수가 됩니다', () => {
+    const future = Date.now() + 86_400_000 * 30
+    const got = parse({ settings: { exportedAt: future } }).settings.exportedAt as number
+    expect(got).toBeLessThanOrEqual(Date.now())
+  })
+
   it('설정이 통째로 없어도 기본값이 선다', () => {
     const s = parse({}).settings
     expect(s.theme).toBe('system')

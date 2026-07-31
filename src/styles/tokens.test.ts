@@ -1,9 +1,11 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
 import { readableOn } from '@/lib/color'
+import { DEFAULT_SETTINGS } from '@/store/initial'
 
 /**
  * 색 토큰의 대비를 지킵니다.
@@ -128,26 +130,44 @@ describe.each([
   })
 })
 
+/*
+ * 고를 수 있는 액센트 목록.
+ * 여기 베껴 두면 한쪽만 고쳤을 때 그냥 지나갑니다 — 화면 코드에서 읽습니다.
+ */
+const ACCENTS = (() => {
+  const view = readFileSync(
+    fileURLToPath(new URL('../views/SettingsView.tsx', import.meta.url)),
+    'utf8',
+  )
+  // 선언부에도 [] 가 있어서(`{ ... }[] = [`) 배열이 열리는 자리부터 잘라야 합니다.
+  const from = view.indexOf('= [', view.indexOf('const ACCENTS'))
+  const list = view.slice(from, view.indexOf('\n]', from))
+  return [...list.matchAll(/value: '(#[0-9a-f]{6})'/g)].map((m) => m[1])
+})()
+
 describe('팔레트 자체', () => {
   it('액센트 후보마다 고른 글자색이 읽힌다', () => {
     /*
-     * 목록을 여기 베껴 두면 한쪽만 고쳤을 때 그냥 지나갑니다 — 화면 코드에서 읽습니다.
      * 흰 글자로 통일하지 않습니다. 그러려고 색을 어둡게 내리면 초록·주황이 탁해져,
      * 색은 그대로 두고 글자색을 색마다 고릅니다.
      */
-    const view = readFileSync(
-      fileURLToPath(new URL('../views/SettingsView.tsx', import.meta.url)),
-      'utf8',
-    )
-    // 선언부에도 [] 가 있어서(`{ ... }[] = [`) 배열이 열리는 자리부터 잘라야 합니다.
-    const from = view.indexOf('= [', view.indexOf('const ACCENTS'))
-    const list = view.slice(from, view.indexOf('\n]', from))
-    const accents = [...list.matchAll(/value: '(#[0-9a-f]{6})'/g)].map((m) => m[1])
-
-    expect(accents.length).toBeGreaterThanOrEqual(5)
-    for (const hex of accents) {
+    expect(ACCENTS.length).toBeGreaterThanOrEqual(5)
+    for (const hex of ACCENTS) {
       expect(contrast(parseHex(hex), parseHex(readableOn(hex)))).toBeGreaterThanOrEqual(4.5)
     }
+  })
+
+  /*
+   * 기본값은 고를 수 있는 색이어야 합니다.
+   * 목록에 없는 값이면 처음 연 사람의 설정 화면에 아무것도 골라져 있지 않습니다 —
+   * 팔레트를 갈면서 tokens.css 와 SettingsView 만 고치고 기본값을 두고 갔던 적이 있습니다.
+   */
+  it('기본 액센트가 고를 수 있는 색 안에 있다', () => {
+    expect(ACCENTS).toContain(DEFAULT_SETTINGS.accent)
+  })
+
+  it('CSS 의 액센트 기준값도 같은 값이다 — 첫 페인트가 다른 색으로 뜨지 않게', () => {
+    expect(light['--accent-base']).toBe(DEFAULT_SETTINGS.accent)
   })
 
   it('어두운 테마에서 밝아진 액센트도 먹 글자를 받쳐 준다', () => {
@@ -165,4 +185,43 @@ describe('팔레트 자체', () => {
     expect(dark['--bg']).not.toBe('#000000')
     expect(dark['--surface']).not.toBe('#000000')
   })
+})
+
+/**
+ * 색은 이 파일 한 곳에서만 정합니다 (tokens.css 첫 줄의 약속).
+ *
+ * 모듈에 색을 직접 적으면 팔레트를 갈 때 그 값만 제자리에 남습니다 — 지면은
+ * 중성으로 내렸는데 그림자만 옛 누런 먹색(rgba(55, 53, 47, …))으로 남아 있던 것이
+ * 그랬습니다. 어두운 테마에서 뒤집히지도 않아, 흰 지면용 칠이 밝은 면 위에 얹혀
+ * 아무것도 안 보이게 됩니다.
+ *
+ * 눈으로는 찾기 어려운 종류라 — 그림자는 옅고, 어두운 테마는 자주 안 열어 봅니다 —
+ * 여기서 잡습니다.
+ */
+describe('모듈 CSS 는 색을 직접 적지 않는다', () => {
+  const src = fileURLToPath(new URL('..', import.meta.url))
+
+  const modules: string[] = []
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name)
+      if (entry.isDirectory()) walk(full)
+      else if (entry.name.endsWith('.module.css')) modules.push(full)
+    }
+  }
+  walk(src)
+
+  it('검사할 모듈을 찾았다', () => {
+    // 걷는 쪽이 조용히 깨지면 통과한 것처럼 보입니다.
+    expect(modules.length).toBeGreaterThan(10)
+  })
+
+  it.each(modules.map((file) => [relative(src, file).split(sep).join('/'), file]))(
+    '%s',
+    (_name, file) => {
+      const literals = [...readFileSync(file, 'utf8').matchAll(/#[0-9a-fA-F]{3,8}\b|\brgba?\([^)]*\)/g)]
+      // 무엇을 어디로 바꿔야 하는지 바로 보이도록 값을 그대로 보여 줍니다.
+      expect(literals.map((m) => m[0])).toEqual([])
+    },
+  )
 })

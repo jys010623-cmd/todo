@@ -28,6 +28,12 @@ import { reducer, type Action } from './reducer'
  */
 const UNDOABLE: Partial<Record<Action['type'], string>> = {
   DELETE_EVENT: '일정을 지웠습니다',
+  /*
+   * 반복 일정의 × 는 그 날 하나만 뺍니다. 지우기와 같은 자리, 같은 모양의 버튼인데
+   * 이것만 되돌릴 수 없으면 손이 미끄러진 그 날이 그대로 사라집니다 —
+   * 건너뛴 날을 되살리는 자리도 따로 없습니다.
+   */
+  SKIP_OCCURRENCE: '이 날을 건너뛰었습니다',
   DELETE_TODO: '할 일을 지웠습니다',
   DELETE_SUBJECT: '과목을 지웠습니다',
   DELETE_GOAL: '목표를 지웠습니다',
@@ -38,6 +44,31 @@ const UNDOABLE: Partial<Record<Action['type'], string>> = {
   DELETE_MIND_NODE: '가지를 지웠습니다',
   MOVE_TODOS: '할 일을 옮겼습니다',
   REPLACE: '기록을 바꿨습니다',
+
+  /*
+   * 고친 것도 되돌립니다.
+   *
+   * 지우는 것만 되돌릴 수 있으면, 주간에서 일정을 잘못 끌어 옮겼을 때 원래 시각이
+   * 어디였는지 알 방법이 없습니다. 지운 것보다 오히려 찾기 어렵습니다 —
+   * 사라지지 않고 엉뚱한 자리에 그대로 있어서 잘못된 줄도 모르고 지나갑니다.
+   *
+   * 한 번에 하나씩 끝나는 것만 넣습니다. 글자를 칠 때마다 오는 것(SET_NOTE)이나
+   * 다시 눌러 되돌아가는 것(TOGGLE_*, SET_SETTINGS)은 넣지 않습니다 —
+   * 앞의 것은 한 글자마다 막대가 뜨고, 뒤의 것은 되돌릴 것이 이미 눈앞에 있습니다.
+   */
+  UPDATE_EVENT: '일정을 고쳤습니다',
+  UPDATE_TODO: '할 일을 고쳤습니다',
+  UPDATE_SUBJECT: '과목을 고쳤습니다',
+  UPDATE_GOAL: '목표를 고쳤습니다',
+  UPDATE_GOAL_STEP: '단계를 고쳤습니다',
+  UPDATE_WISH: '위시리스트 항목을 고쳤습니다',
+  UPDATE_MANDAL: '만다라트를 고쳤습니다',
+  SET_MANDAL_CELL: '만다라트 칸을 고쳤습니다',
+  UPDATE_MINDMAP: '마인드맵을 고쳤습니다',
+  UPDATE_MIND_NODE: '가지를 고쳤습니다',
+  MOVE_MIND_NODE: '가지를 옮겼습니다',
+  REPARENT_MIND_NODE: '가지를 옮겨 붙였습니다',
+  RESET_MIND_LAYOUT: '배치를 처음으로 되돌렸습니다',
 }
 
 /** 사라진 줄 모르고 지나칠 만큼 짧지 않게, 방해되지 않을 만큼 길지 않게. */

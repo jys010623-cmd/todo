@@ -24,23 +24,93 @@ const ev = (id: string, start?: string, end?: string): PlanEvent => ({
 
 const by = (slots: TimedSlot[], id: string) => slots.find((s) => s.event.id === id)!
 
-/** 두 상자가 화면에서 실제로 겹치는가 — 세로도 가로도 */
-function overlaps(a: TimedSlot, b: TimedSlot): boolean {
+/**
+ * 시간이 겹치는데 같은 자리(column)를 쓰는가.
+ *
+ * 화면에서 상자끼리 조금 겹치는 것은 일부러 그렇게 둔 것입니다(layoutDay 의 오른쪽 확장).
+ * 하지만 같은 자리를 배정받으면 하나가 다른 하나를 통째로 덮어, 있는 줄도 모릅니다.
+ */
+function sameLane(a: TimedSlot, b: TimedSlot): boolean {
   const vertical = a.top < b.top + b.height - 0.01 && b.top < a.top + a.height - 0.01
-  const horizontal =
-    a.column / a.columns < (b.column + 1) / b.columns - 0.001 &&
-    b.column / b.columns < (a.column + 1) / a.columns - 0.001
-  return vertical && horizontal
+  return vertical && a.column === b.column
 }
 
-/** 어느 두 개도 겹치지 않아야 합니다 */
+/** 겹치는 것끼리는 어느 둘도 같은 자리를 쓰지 않아야 합니다 */
 function noneOverlap(slots: TimedSlot[]) {
   for (let i = 0; i < slots.length; i++) {
     for (let j = i + 1; j < slots.length; j++) {
-      expect(overlaps(slots[i], slots[j])).toBe(false)
+      expect(sameLane(slots[i], slots[j])).toBe(false)
     }
   }
 }
+
+describe('layoutDay — 가로 자리', () => {
+  it('혼자면 열을 다 쓴다', () => {
+    const [s] = layoutDay([ev('a', '09:00', '10:00')])
+    expect(s.left).toBe(0)
+    expect(s.width).toBe(100)
+  })
+
+  it('늦게 시작하는 것 밑으로는 뻗는다 — 내 글은 그 위에 있습니다', () => {
+    const slots = layoutDay([ev('a', '19:00', '21:00'), ev('b', '20:00', '21:00')])
+    // a 는 b 가 시작하기 전 구간에서 열을 다 씁니다.
+    expect(by(slots, 'a').width).toBe(100)
+    expect(by(slots, 'a').left).toBe(0)
+    // b 는 제 자리를 지킵니다 — 왼쪽으로 밀지 않습니다.
+    expect(by(slots, 'b').left).toBe(50)
+    expect(by(slots, 'b').width).toBe(50)
+  })
+
+  it('같이 시작하면 뻗지 않는다 — 뻗어 봐야 처음부터 덮여 제목만 잘립니다', () => {
+    const slots = layoutDay([ev('a', '10:00', '12:00'), ev('b', '10:00', '12:00')])
+    expect(by(slots, 'a').width).toBe(50)
+    expect(by(slots, 'b').width).toBe(50)
+  })
+
+  it('먼저 시작한 것에 막히면 거기서 멈춘다', () => {
+    // b(09:30)는 c(09:00)보다 늦게 시작하므로 c 밑으로는 못 뻗습니다.
+    const slots = layoutDay([
+      ev('a', '09:00', '12:00'),
+      ev('b', '09:30', '12:00'),
+      ev('c', '09:00', '12:00'),
+    ])
+    expect(by(slots, 'b').width).toBeCloseTo(100 / 3, 6)
+  })
+
+  it('아무도 안 겹치는 칸까지는 뻗는다', () => {
+    // a 는 12:00 에 끝나고 c 는 13:00 에 시작 — 셋이 한 묶음이지만 a 는 c 와 무관합니다.
+    const slots = layoutDay([
+      ev('a', '09:00', '12:00'),
+      ev('b', '10:00', '14:00'),
+      ev('c', '13:00', '14:00'),
+    ])
+    expect(by(slots, 'a').width).toBeGreaterThan(100 / 3)
+  })
+
+  it('어느 칸도 열 밖으로 나가지 않는다', () => {
+    const slots = layoutDay([
+      ev('a', '09:00', '12:00'),
+      ev('b', '09:00', '12:00'),
+      ev('c', '10:00', '12:00'),
+      ev('d', '11:00', '12:00'),
+    ])
+    for (const s of slots) {
+      expect(s.left).toBeGreaterThanOrEqual(0)
+      expect(s.left + s.width).toBeLessThanOrEqual(100.000001)
+    }
+  })
+
+  it('왼쪽으로는 절대 밀지 않는다 — 앞 칸을 덮는 것은 이것뿐입니다', () => {
+    const slots = layoutDay([
+      ev('a', '09:00', '12:00'),
+      ev('b', '09:00', '12:00'),
+      ev('c', '09:00', '12:00'),
+    ])
+    for (const s of slots) {
+      expect(s.left).toBeCloseTo((s.column * 100) / s.columns, 6)
+    }
+  })
+})
 
 describe('isTimed', () => {
   it('시작 시각이 제대로 있어야 격자에 오른다', () => {

@@ -39,10 +39,13 @@ const VALID_TAGS = new Set<string>(TAG_COLORS)
  * 지금까지 기본값이었던 액센트들 — 현재 액센트로 옮겨 줍니다.
  * 기본값은 고른 것이 아니라 주어진 것이라, 팔레트를 갈면 따라와야 합니다.
  */
-const LEGACY_ACCENTS = new Set(['#7c6ef6', '#9082cc', '#6e56cf'])
+const LEGACY_ACCENTS = new Set(['#7c6ef6', '#9082cc', '#6e56cf', '#6d5ce7'])
 
 const SUB_GOALS = 8
 const ACTIONS = 8
+
+/** 간격의 위 한계 — '13주마다' 는 사람이 세지 않고, 화면에서도 고를 수 없습니다. */
+const MAX_EVERY = 12
 
 function migrateTag(tag: unknown): TagColor {
   if (typeof tag === 'string') {
@@ -84,6 +87,14 @@ function migrateSettings(raw: unknown): Settings {
     pomodoro: migratePomodoro(s.pomodoro),
     weekStart: s.weekStart === 0 || s.weekStart === 1 ? s.weekStart : DEFAULT_SETTINGS.weekStart,
     hour12: typeof s.hour12 === 'boolean' ? s.hour12 : DEFAULT_SETTINGS.hour12,
+    /*
+     * 없던 시절 데이터에는 아예 없습니다 — 그때는 '한 번도 안 내보낸 것' 으로 봅니다.
+     * 미래 시각이면 '며칠 전' 이 음수가 되므로 그것도 없는 것으로 둡니다.
+     */
+    exportedAt:
+      typeof s.exportedAt === 'number' && Number.isFinite(s.exportedAt) && s.exportedAt > 0
+        ? Math.min(s.exportedAt, Date.now())
+        : undefined,
   }
 }
 
@@ -180,10 +191,37 @@ function migrateRepeat(raw: unknown): Repeat | undefined {
   if (!r || typeof r !== 'object') return undefined
   if (!REPEAT_FREQS.includes(r.freq as RepeatFreq)) return undefined
 
-  const skip = asArray<unknown>(r.skip).filter(
-    (d): d is string => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d),
-  )
-  return { freq: r.freq as RepeatFreq, skip: skip.length > 0 ? skip : undefined }
+  const isDate = (d: unknown): d is string =>
+    typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)
+
+  const skip = asArray<unknown>(r.skip).filter(isDate)
+
+  /*
+   * 요일은 0..6 정수만 받고 겹치는 것을 걸러 정렬합니다.
+   * 하나라도 엉뚱한 값이 섞이면 그 요일에만 안 오거나 매번 오는 식으로 어긋나는데,
+   * 화면에서는 규칙이 이상하다는 것을 알아볼 방법이 없습니다.
+   */
+  const days = [
+    ...new Set(
+      asArray<unknown>(r.days).filter(
+        (d): d is number => typeof d === 'number' && Number.isInteger(d) && d >= 0 && d <= 6,
+      ),
+    ),
+  ].sort((a, b) => a - b)
+
+  // 0 이나 음수면 나머지 연산이 무한·NaN 이 됩니다. 1 은 '매번' 이라 없는 것과 같습니다.
+  const every =
+    typeof r.every === 'number' && Number.isFinite(r.every) && r.every > 1
+      ? Math.min(Math.floor(r.every), MAX_EVERY)
+      : undefined
+
+  return {
+    freq: r.freq as RepeatFreq,
+    skip: skip.length > 0 ? skip : undefined,
+    until: isDate(r.until) ? r.until : undefined,
+    days: days.length > 0 ? days : undefined,
+    every,
+  }
 }
 
 /**

@@ -79,12 +79,14 @@
   transform: translateY(-2px);
 }
 
+/* 시간을 고르는 칸이 열리면 아래로 펼쳐지므로 제목과 세로로 쌓습니다. */
 .slotBody {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: baseline;
-  gap: var(--s2);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
 }
 
 .slotTitle {
@@ -94,13 +96,6 @@
   line-height: var(--lh-snug);
   color: var(--text-1);
   overflow-wrap: anywhere;
-}
-
-.slotEnd {
-  flex: none;
-  font-size: var(--fs-cap);
-  color: var(--text-3);
-  font-variant-numeric: tabular-nums;
 }
 
 .empty {

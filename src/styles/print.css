@@ -1,0 +1,119 @@
+/*
+ * 인쇄.
+ *
+ * 종이 플래너를 흉내 낸 앱인데 정작 종이로 못 뽑았습니다. 벽에 붙여 두거나 가방에
+ * 넣고 다니는 것이 이 물건의 원래 쓰임에 가깝습니다.
+ *
+ * 화면용 장치는 전부 걷어냅니다 — 메뉴, 되돌리기 막대, 지우기 × , 무언가를 더하는
+ * 자리. 종이 위에서는 누를 수 없고, 누를 수 없는 것이 그려져 있으면 읽는 데
+ * 방해만 됩니다. 지금 열려 있는 화면 하나만 그대로 나갑니다.
+ */
+@media print {
+  /* 잉크를 아끼려는 것이 아니라, 옅은 회색 면은 인쇄하면 지저분한 얼룩이 됩니다. */
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-card: #ffffff;
+    --surface-sunken: #ffffff;
+    --border: #c8c8c8;
+    --divider: #dcdcdc;
+    --text-1: #000000;
+    --text-2: #333333;
+    --text-3: #555555;
+    --text-4: #777777;
+    --hover: transparent;
+    --press: transparent;
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+  }
+
+  /* 어두운 테마로 보고 있어도 종이는 흽니다. */
+  :root[data-theme='dark'] {
+    color-scheme: light;
+  }
+
+  body {
+    overflow: visible;
+    background: #ffffff;
+  }
+
+  /*
+   * 셸은 화면 높이에 맞춰 세 열을 세우지만, 종이는 아래로 흐릅니다.
+   * 높이를 풀지 않으면 첫 장에 한 화면만 나오고 나머지가 잘립니다.
+   */
+  #root > div {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 메뉴와 떠 있는 것들은 종이에 올릴 이유가 없습니다. */
+  nav,
+  [class*='UndoBar'],
+  [class*='undoBar'] {
+    display: none !important;
+  }
+
+  main,
+  aside {
+    display: block !important;
+    overflow: visible !important;
+    border: none !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+
+  /* 안쪽 스크롤 영역도 전부 풀어야 잘리지 않습니다. */
+  [class*='scroll'],
+  [class*='Scroll'] {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    flex: none !important;
+  }
+
+  /*
+   * 누를 수 없는 것들.
+   * 지우기 × , 더하기 줄, 색·시각·되풀이를 고르는 칸 — 종이 위에서는 뜻이 없습니다.
+   */
+  [class*='remove'],
+  [class*='add'],
+  [class*='print'],
+  [class*='arrow'],
+  [aria-label*='이전'],
+  [aria-label*='다음'],
+  [aria-label*='인쇄'],
+  [aria-label*='삭제'],
+  [aria-label*='추가'],
+  [aria-label*='바꾸기'],
+  [aria-label*='되풀이'],
+  [aria-label*='건너뛰기'],
+  [class*='TodoMeta'],
+  [class*='todoMeta'],
+  [class*='EventFields'],
+  [class*='eventFields'] {
+    display: none !important;
+  }
+
+  /* 하루가 종이 사이에서 갈라지면 읽는 흐름이 끊깁니다. */
+  li,
+  section,
+  [class*='card'],
+  [class*='goal'] {
+    break-inside: avoid;
+  }
+
+  /* 종이에서 링크 밑줄이나 포커스 링은 얼룩입니다. */
+  * {
+    outline: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@page {
+  margin: 14mm;
+}

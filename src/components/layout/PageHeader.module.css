@@ -32,6 +32,24 @@
   gap: var(--s2);
 }
 
+/* 자주 누르는 것이 아니라 조용히 있다가, 찾으면 거기 있습니다. */
+.print {
+  padding: 2px var(--s3);
+  border-radius: var(--r-full);
+  font-size: var(--fs-cap);
+  color: var(--text-3);
+  background: var(--surface-sunken);
+  white-space: nowrap;
+  transition:
+    color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+.print:hover {
+  color: var(--text-1);
+  background: var(--press);
+}
+
 @media (max-width: 1024px) {
   .header {
     padding: var(--s6) var(--s6) var(--s4);

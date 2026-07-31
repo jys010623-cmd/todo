@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { Segmented } from '@/components/common/Segmented'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { daysSince, todayISO } from '@/lib/date'
+import { icsNow, toICS } from '@/lib/ics'
 import { clearBroken, parseData, readBroken } from '@/lib/storage'
 import { createInitialData } from '@/store/initial'
 import { usePlanner } from '@/store/PlannerContext'
@@ -73,8 +74,8 @@ export function SettingsView() {
   /** 읽지 못해 옆으로 치워 둔 기록 — 있으면 되찾을 자리를 내줍니다. */
   const [broken, setBroken] = useState(() => readBroken())
 
-  const download = (text: string, name: string) => {
-    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
+  const download = (text: string, name: string, type = 'application/json') => {
+    const url = URL.createObjectURL(new Blob([text], { type }))
     const a = document.createElement('a')
     a.href = url
     a.download = name
@@ -304,6 +305,8 @@ export function SettingsView() {
             <p className={styles.labelBody}>
               기록은 이 브라우저에만 있습니다. 방문 기록을 지우거나 브라우저를 바꾸면 함께
               사라지니, 가끔 파일로 내려받아 두세요. 가져오면 지금 기록을 덮어씁니다.
+              달력 파일(.ics)은 구글 캘린더나 폰 달력에서 일정만 열어 볼 때 씁니다 —
+              이쪽으로는 되돌릴 수 없습니다.
             </p>
             {/* 마지막으로 챙긴 때 — 이게 없으면 '가끔' 이 영영 안 옵니다. */}
             <p className={styles.labelBody}>
@@ -325,6 +328,23 @@ export function SettingsView() {
           <div className={styles.actions}>
             <button type="button" className={styles.button} onClick={exportData}>
               내보내기
+            </button>
+            {/*
+             * 달력 파일은 백업과 쓰임이 다릅니다 — 백업은 이 앱으로 돌아오기 위한 것이고,
+             * 이건 구글 캘린더나 폰 달력에서 보기 위한 것입니다.
+             */}
+            <button
+              type="button"
+              className={styles.button}
+              onClick={() =>
+                download(
+                  toICS(data.events, icsNow(Date.now())),
+                  `planme-${todayISO()}.ics`,
+                  'text/calendar',
+                )
+              }
+            >
+              달력 파일
             </button>
             <button
               type="button"

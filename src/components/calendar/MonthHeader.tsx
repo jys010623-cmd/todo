@@ -11,6 +11,16 @@ export function MonthHeader() {
       <h1 className={styles.title}>{formatMonthTitle(cursorMonth)}</h1>
 
       <div className={styles.controls}>
+        {/* 달력은 벽에 붙여 두기 좋은 화면이라, 뽑는 자리가 여기 있어야 합니다. */}
+        <button
+          type="button"
+          className={styles.todayBtn}
+          aria-label={`${formatMonthTitle(cursorMonth)} 인쇄`}
+          onClick={() => window.print()}
+        >
+          인쇄
+        </button>
+
         {!isSameMonth(cursorMonth, today) && (
           <button
             type="button"

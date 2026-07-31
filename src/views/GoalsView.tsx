@@ -62,6 +62,7 @@ export function GoalsView() {
             ? `진행 중 ${counts.active} · 언젠가 ${counts.someday} · 이룬 것 ${counts.done}`
             : '오늘 밖의 일들을 적어 둡니다'
         }
+        printable
       >
         <Segmented label="목표 상태" value={filter} options={FILTERS} onChange={setFilter} />
       </PageHeader>

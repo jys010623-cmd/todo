@@ -136,7 +136,7 @@ export function StudyView() {
 
   return (
     <div className={styles.scroll}>
-      <PageHeader title="스터디" subtitle={formatWeekRange(today, settings.weekStart)} />
+      <PageHeader title="스터디" subtitle={formatWeekRange(today, settings.weekStart)} printable />
 
       <div className={styles.body}>
         <section className={styles.summary}>

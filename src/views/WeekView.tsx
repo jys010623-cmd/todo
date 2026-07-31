@@ -172,7 +172,7 @@ export function WeekView() {
 
   return (
     <>
-      <PageHeader title="주간" subtitle={formatWeekRange(selectedDate, weekStart)}>
+      <PageHeader title="주간" subtitle={formatWeekRange(selectedDate, weekStart)} printable>
         {!inThisWeek && (
           <button type="button" className={styles.todayBtn} onClick={() => selectDate(today)}>
             오늘

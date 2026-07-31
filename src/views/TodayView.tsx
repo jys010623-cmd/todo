@@ -30,7 +30,7 @@ export function TodayView() {
 
   return (
     <div className={styles.scroll}>
-      <PageHeader title="오늘" subtitle={formatDateLong(today)} />
+      <PageHeader title="오늘" subtitle={formatDateLong(today)} printable />
 
       <div className={styles.body}>
         <section className={styles.summary}>

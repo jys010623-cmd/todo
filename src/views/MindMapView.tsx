@@ -1,14 +1,26 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
+import { ConfirmDelete } from '@/components/common/ConfirmDelete'
 import { InlineAdd } from '@/components/common/InlineAdd'
 import { InlineEdit } from '@/components/common/InlineEdit'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { todayISO } from '@/lib/date'
 import { NODE_W, descendantIds, layoutMindMap, type PlacedNode } from '@/lib/mindmap'
+import { MAX_MIND_H, MIN_MIND_H } from '@/lib/storage'
 import { uid } from '@/lib/id'
 import { usePlanner } from '@/store/PlannerContext'
 import { TAG_COLORS, type MindNode } from '@/types'
 import styles from './MindMapView.module.css'
+
+/*
+ * 배율의 위아래.
+ * 아래를 0.35 까지 연 것은 가지가 많은 판을 통째로 담아야 해서입니다 —
+ * 그보다 줄이면 글자가 읽히지 않아 담아도 소용이 없습니다.
+ */
+const MIN_ZOOM = 0.35
+const MAX_ZOOM = 1.6
+
+const clampPane = (h: number) => Math.round(Math.min(MAX_MIND_H, Math.max(MIN_MIND_H, h)))
 
 /** 가지마다 색을 돌려 씁니다 — 같은 색이 이웃하지만 않으면 갈래가 구분됩니다. */
 function branchTag(branch: number) {
@@ -75,12 +87,68 @@ export function MindMapView() {
   const [addingTo, setAddingTo] = useState<string | null>(null)
 
   /**
+   * 판이 담기는 자리의 폭. 여기에 맞춰 처음 배율을 정합니다.
+   * 창을 줄이면 따라 좁아지므로 계속 지켜봅니다.
+   */
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [pane, setPane] = useState({ w: 0, h: 0 })
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const observer = new ResizeObserver(([entry]) =>
+      setPane({ w: entry.contentRect.width, h: entry.contentRect.height }),
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [current?.id])
+
+  /**
+   * 판의 높이. 내용이 아니라 사람이 정합니다.
+   *
+   * 예전에는 높이를 안 정해 두고 내용만큼 자라게 뒀습니다. 그러면 가지를 하나 펼칠
+   * 때마다 판이 자라 아래 글이 밀려 내려가고, 접으면 다시 올라옵니다 — 읽던 자리가
+   * 계속 움직입니다. 이제 아래 손잡이를 끌어 정하고, 그 값은 기억해 둡니다.
+   *
+   * 끄는 동안은 여기서 그립니다. 매 움직임마다 저장까지 부르면 판이 버벅입니다.
+   */
+  const [dragH, setDragH] = useState<number | null>(null)
+  const paneH = dragH ?? data.settings.mindHeight
+  /** 끌기 시작한 순간의 높이와 손 위치 — 여기서부터 재야 커서와 판이 어긋나지 않습니다. */
+  const gripFrom = useRef<{ from: number; y0: number } | null>(null)
+
+  /**
    * 판 전체를 키우고 줄입니다.
    * 노드 높이는 offsetHeight 로 재는데 이 값은 transform 의 영향을 받지 않아,
    * 확대해도 배치 계산은 그대로입니다.
    */
-  const [zoom, setZoom] = useState(1)
-  const step = (d: number) => setZoom((z) => Math.min(1.6, Math.max(0.6, Math.round((z + d) * 10) / 10)))
+  const [userZoom, setUserZoom] = useState<number | null>(null)
+
+  /**
+   * 아무것도 안 고른 상태의 배율 — 판이 자리에 들어오는 만큼입니다.
+   *
+   * 마인드맵은 가지가 좌우로 뻗어 금세 화면보다 넓어집니다. 100% 로 시작하면 열자마자
+   * 오른쪽 가지가 잘린 채 뜨고, 스크롤바를 없앤 뒤로는 밀 수 있다는 것조차 안 보입니다 —
+   * 판을 여는 목적이 '한눈에 보기' 인데 그게 안 됩니다.
+   *
+   * 넓힐 때는 쓰지 않습니다(1 이 천장). 좁은 판을 늘려 놓으면 글자만 커지고
+   * 남는 자리는 그대로라, 보기 좋아지지 않습니다.
+   *
+   * 세로도 함께 봅니다 — 판 높이를 사람이 정하게 된 뒤로는 가로만 맞추면 아래가
+   * 잘립니다. 판을 끌어 키우면 지도도 그만큼 커집니다.
+   */
+  const fit = useMemo(() => {
+    if (!layout || !pane.w || !pane.h || !layout.width || !layout.height) return 1
+    const by = Math.min(pane.w / layout.width, pane.h / layout.height)
+    if (by >= 1) return 1
+    return Math.max(MIN_ZOOM, Math.floor(by * 100) / 100)
+  }, [layout, pane])
+
+  const zoom = userZoom ?? fit
+  const step = (d: number) =>
+    setUserZoom(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round((zoom + d) * 10) / 10)))
+
+  // 다른 판으로 옮기면 배율도 그 판에 맞게 다시 잡습니다.
+  useEffect(() => setUserZoom(null), [current?.id])
 
   const hasMoved = current?.nodes.some((n) => n.dx || n.dy) ?? false
 
@@ -207,11 +275,12 @@ export function MindMapView() {
             >
               −
             </button>
+            {/* 눌러서 돌아가는 곳이 100% 가 아니라 '자리에 맞는 크기' 입니다. */}
             <button
               type="button"
               className={styles.zoomLevel}
-              aria-label="원래 크기로"
-              onClick={() => setZoom(1)}
+              aria-label="화면에 맞추기"
+              onClick={() => setUserZoom(null)}
             >
               {Math.round(zoom * 100)}%
             </button>
@@ -254,17 +323,19 @@ export function MindMapView() {
                   dispatch({ type: 'UPDATE_MINDMAP', id: current.id, patch: { title } })
                 }
               />
-              <button
-                type="button"
+              {/* 판 하나가 통째로 사라지는 자리입니다 — 두 번 눌러야 지워집니다. */}
+              <ConfirmDelete
+                label={`${current.title} 마인드맵`}
                 className={styles.remove}
-                aria-label={`${current.title} 마인드맵 삭제`}
-                onClick={() => dispatch({ type: 'DELETE_MINDMAP', id: current.id })}
-              >
-                ×
-              </button>
+                onDelete={() => dispatch({ type: 'DELETE_MINDMAP', id: current.id })}
+              />
             </div>
 
-            <div className={styles.canvasScroll}>
+            <div
+              ref={scrollRef}
+              className={styles.canvasScroll}
+              style={paneH ? { height: paneH } : undefined}
+            >
               {/* 늘어난 판이 차지할 자리는 바깥이 맡습니다 — 안쪽은 원래 좌표 그대로. */}
               <div
                 className={styles.sizer}
@@ -379,6 +450,61 @@ export function MindMapView() {
               </div>
             </div>
 
+            {/*
+             * 판의 아래를 잡아 끌어 높이를 정합니다.
+             *
+             * 키보드로도 됩니다 — 끌기만 두면 손이 마우스에 없는 사람은 기본 높이에
+             * 갇힙니다. 위·아래 화살표로 조금씩, Home·End 로 끝까지.
+             */}
+            <div
+              className={styles.grip}
+              role="separator"
+              tabIndex={0}
+              aria-label="마인드맵 판 높이"
+              aria-orientation="horizontal"
+              aria-valuenow={Math.round(paneH ?? pane.h)}
+              aria-valuemin={MIN_MIND_H}
+              aria-valuemax={MAX_MIND_H}
+              onPointerDown={(e) => {
+                e.preventDefault()
+                e.currentTarget.setPointerCapture(e.pointerId)
+                const from = scrollRef.current?.getBoundingClientRect().height ?? 0
+                const y0 = e.clientY
+                setDragH(clampPane(from))
+                gripFrom.current = { from, y0 }
+              }}
+              onPointerMove={(e) => {
+                const g = gripFrom.current
+                if (!g) return
+                setDragH(clampPane(g.from + (e.clientY - g.y0)))
+              }}
+              onPointerUp={(e) => {
+                e.currentTarget.releasePointerCapture(e.pointerId)
+                gripFrom.current = null
+                // 끌기가 끝난 다음에야 저장합니다 — 매 픽셀마다 부르면 판이 버벅입니다.
+                if (dragH !== null) dispatch({ type: 'SET_SETTINGS', patch: { mindHeight: dragH } })
+                setDragH(null)
+              }}
+              onKeyDown={(e) => {
+                const now = Math.round(paneH ?? pane.h)
+                const next =
+                  e.key === 'ArrowDown'
+                    ? now + 40
+                    : e.key === 'ArrowUp'
+                      ? now - 40
+                      : e.key === 'End'
+                        ? MAX_MIND_H
+                        : e.key === 'Home'
+                          ? MIN_MIND_H
+                          : null
+                if (next === null) return
+                e.preventDefault()
+                dispatch({ type: 'SET_SETTINGS', patch: { mindHeight: clampPane(next) } })
+              }}
+            >
+              <span className={styles.gripBar} aria-hidden="true" />
+            </div>
+
             {sent && (
               <p className={styles.sent} role="status">
                 {sent}
@@ -390,7 +516,8 @@ export function MindMapView() {
               <b>Tab</b> 으로 아래 가지를 이어 만들고 <b>Esc</b> 로 멈춥니다. 노드를 끌어
               빈 자리에 놓으면 그 자리에 두고, <b>다른 노드 위에 놓으면 그 밑으로</b>{' '}
               들어갑니다. 올리면 나오는 <b>→</b> 로 오늘 할 일에 보내고 <b>×</b> 로 그 아래를
-              함께 지웁니다. 판이 크면 위쪽 <b>+ −</b> 로 키우고 줄입니다.
+              함께 지웁니다. 판은 <b>아래를 잡아 끌어</b> 높이를 정하고, 그만큼 지도가
+              맞춰 들어옵니다. 배율을 직접 고르려면 위쪽 <b>+ −</b> 를 씁니다.
             </p>
           </>
         ) : (
@@ -602,15 +729,9 @@ function Node({
             →
           </button>
         )}
+        {/* 아래 가지까지 함께 사라지므로 여기도 두 번 눌러야 합니다. */}
         {!isRoot && (
-          <button
-            type="button"
-            className={styles.tool}
-            aria-label={`${node.text} 삭제`}
-            onClick={onDelete}
-          >
-            ×
-          </button>
+          <ConfirmDelete label={node.text} className={styles.tool} onDelete={onDelete} />
         )}
       </div>
 

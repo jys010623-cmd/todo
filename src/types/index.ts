@@ -284,6 +284,13 @@ export interface Settings {
    * 안 켠 것이 낫습니다.
    */
   notify?: { enabled: boolean; leadMin: number }
+  /**
+   * 마인드맵 판의 높이 (px). 아래 손잡이를 끌어 정합니다.
+   *
+   * 내용에 따라 저절로 늘어나게 두지 않습니다 — 가지 하나를 펼칠 때마다 판이 자라
+   * 아래 글이 밀려 내려가고, 접으면 다시 올라옵니다. 얼마나 볼지는 사람이 정합니다.
+   */
+  mindHeight?: number
 }
 
 /** localStorage 에 영속되는 도메인 상태 */

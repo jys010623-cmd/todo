@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { ConfirmDelete } from '@/components/common/ConfirmDelete'
 import { InlineAdd } from '@/components/common/InlineAdd'
 import { InlineEdit } from '@/components/common/InlineEdit'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -125,14 +126,12 @@ export function MandalView() {
                   dispatch({ type: 'UPDATE_MANDAL', id: current.id, patch: { title } })
                 }
               />
-              <button
-                type="button"
+              {/* 81칸이 한 번에 사라지는 자리입니다 — 두 번 눌러야 지워집니다. */}
+              <ConfirmDelete
+                label={`${current.title} 만다라트`}
                 className={styles.remove}
-                aria-label={`${current.title} 만다라트 삭제`}
-                onClick={() => dispatch({ type: 'DELETE_MANDAL', id: current.id })}
-              >
-                ×
-              </button>
+                onDelete={() => dispatch({ type: 'DELETE_MANDAL', id: current.id })}
+              />
             </div>
 
             <div className={styles.boardScroll}>

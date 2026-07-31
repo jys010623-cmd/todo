@@ -331,6 +331,26 @@ describe('설정 — 한 항목이 비어도 나머지가 살아야 한다', () 
     )
   })
 
+  it('끌어 본 적이 없으면 판 높이는 화면이 정합니다', () => {
+    expect(parse({ settings: {} }).settings.mindHeight).toBeUndefined()
+  })
+
+  it.each([
+    ['끌어 둔 높이는 그대로', 530, 530],
+    ['손잡이가 갈 수 있는 아래까지만', 10, 240],
+    ['0 이면 판이 사라져 손잡이까지 없어집니다', 0, 240],
+    ['음수', -100, 240],
+    ['위로도 막습니다', 99999, 1600],
+    ['소수는 픽셀로', 412.6, 413],
+  ])('마인드맵 판 높이 — %s', (_name, mindHeight, want) => {
+    expect(parse({ settings: { mindHeight } }).settings.mindHeight).toBe(want)
+  })
+
+  it('높이가 숫자가 아니면 없는 것으로 둡니다', () => {
+    expect(parse({ settings: { mindHeight: '530' } }).settings.mindHeight).toBeUndefined()
+    expect(parse({ settings: { mindHeight: NaN } }).settings.mindHeight).toBeUndefined()
+  })
+
   it('켜짐이 참이 아니면 꺼진 것 — 애매한 값으로 알림이 울리면 안 됩니다', () => {
     expect(parse({ settings: { notify: { enabled: 'yes' } } }).settings.notify?.enabled).toBe(false)
   })

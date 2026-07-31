@@ -30,31 +30,23 @@ body {
   color: var(--text-1);
 }
 
-/* 얇은 스크롤바 — 종이 위에 최대한 드러나지 않게 */
+/*
+ * 스크롤바를 그리지 않습니다.
+ *
+ * 종이 플래너에는 막대가 없습니다. 이 앱은 화면을 세 열로 나눠 각 열이 따로
+ * 흐르는데, 그때마다 회색 막대가 하나씩 서면 지면이 칸으로 잘려 보입니다.
+ *
+ * 미는 것 자체는 그대로입니다 — 휠·트랙패드·터치·키보드(Page Up/Down, 화살표)
+ * 모두 됩니다. 막대만 안 보입니다.
+ */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-width: none; /* 파이어폭스 */
+  -ms-overflow-style: none; /* 옛 엣지·IE */
 }
 
 *::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: var(--r-full);
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: var(--text-3);
-  background-clip: content-box;
+  /* 크롬·사파리 — width 를 0 으로 두는 것과 달리 자리까지 없앱니다. */
+  display: none;
 }
 
 :focus-visible {

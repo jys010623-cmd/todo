@@ -40,6 +40,13 @@
  * 트리는 노드 수에 따라 얼마든지 커지므로 지면에 맞추지 않고 밀어서 봅니다.
  * 줄여서 맞추면 글자가 먼저 읽히지 않게 됩니다 — 만다라트와 같은 판단입니다.
  */
+/*
+ * 판.
+ *
+ * 높이는 내용이 아니라 사람이 정합니다 — 내용만큼 자라게 두면 가지를 하나 펼칠
+ * 때마다 판이 커져 아래 글이 밀려 내려가고, 접으면 다시 올라옵니다.
+ * 여기 적은 것은 처음 값일 뿐이고, 아래 손잡이를 끌면 인라인으로 덮입니다.
+ */
 .canvasScroll {
   overflow: auto;
   overscroll-behavior: contain;
@@ -47,8 +54,37 @@
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   background: var(--surface);
-  /* 캔버스가 작을 때 위쪽에 붙지 않도록 */
-  max-height: 70vh;
+  height: 58vh;
+  min-height: 240px;
+}
+
+/*
+ * 판 아래의 손잡이.
+ *
+ * 잡는 자리는 넉넉히(14px) 두고 보이는 것은 가느다란 선 하나만 둡니다 — 늘 보이는
+ * 굵은 막대는 판과 아래 글 사이를 갈라 놓아, 있지도 않은 경계가 하나 생깁니다.
+ */
+.grip {
+  height: 14px;
+  display: grid;
+  place-items: center;
+  cursor: ns-resize;
+  /* 끄는 동안 글자가 잡히지 않게 */
+  touch-action: none;
+  user-select: none;
+}
+
+.gripBar {
+  width: 40px;
+  height: 3px;
+  border-radius: var(--r-full);
+  background: var(--border);
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.grip:hover .gripBar,
+.grip:focus-visible .gripBar {
+  background: var(--text-3);
 }
 
 /* 확대한 판이 차지할 자리 — 안쪽 좌표를 건드리지 않으려고 바깥에서 잡습니다. */
@@ -423,9 +459,12 @@
     padding: 0 var(--s6) var(--s8);
   }
 
-  /* 세로로 흐르는 배치에서는 vh 로 재면 판이 지나치게 납작해집니다. */
+  /*
+   * 좁은 화면에서는 페이지가 세로로 흐릅니다 — 판이 화면을 다 먹으면 아래에 무엇이
+   * 더 있는지 안 보여, 조금 낮게 잡습니다. 여기서도 손잡이로 정할 수 있습니다.
+   */
   .canvasScroll {
-    max-height: none;
+    height: 46vh;
   }
 }
 

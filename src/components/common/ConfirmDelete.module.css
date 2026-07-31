@@ -1,0 +1,20 @@
+/*
+ * 물어보는 동안의 모습.
+ *
+ * 평소의 × 는 놓이는 자리를 따르지만(제목 옆과 노드 위는 크기가 다릅니다), 물어볼
+ * 때만은 어디서나 같은 모습이어야 합니다 — 이 한 번은 눈에 띄어야 하는 버튼이라
+ * 자리에 묻히면 물어본 뜻이 없습니다.
+ */
+.confirm {
+  flex: none;
+  padding: 2px var(--s2);
+  border-radius: var(--r-xs);
+  background: var(--tag-coral-soft);
+  border: 1px solid var(--tag-coral);
+  color: var(--tag-coral-text);
+  font-size: var(--fs-cap);
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+}

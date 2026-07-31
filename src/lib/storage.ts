@@ -47,6 +47,13 @@ const ACTIONS = 8
 /** 간격의 위 한계 — '13주마다' 는 사람이 세지 않고, 화면에서도 고를 수 없습니다. */
 const MAX_EVERY = 12
 
+/**
+ * 마인드맵 판을 끌어 정할 수 있는 범위 (px).
+ * 아래로는 노드 두어 줄이 남고, 위로는 아무리 큰 화면에서도 손잡이가 화면 안에 있습니다.
+ */
+export const MIN_MIND_H = 240
+export const MAX_MIND_H = 1600
+
 /** 알림을 몇 분 전에 — 나갈 채비를 하기에 10분이면 대개 맞습니다. */
 export const DEFAULT_LEAD_MIN = 10
 const MIN_LEAD_MIN = 5
@@ -111,6 +118,14 @@ function migrateSettings(raw: unknown): Settings {
         ? Math.min(s.exportedAt, Date.now())
         : undefined,
     notify: migrateNotify(s.notify),
+    /*
+     * 없으면 화면이 알아서 정합니다(끌어 본 적이 없는 것). 손잡이가 갈 수 있는 데까지만
+     * 받습니다 — 저장된 값이 깨져 0 이 되면 판이 사라져 되돌릴 손잡이까지 없어집니다.
+     */
+    mindHeight:
+      typeof s.mindHeight === 'number' && Number.isFinite(s.mindHeight)
+        ? Math.min(Math.max(Math.round(s.mindHeight), MIN_MIND_H), MAX_MIND_H)
+        : undefined,
   }
 }
 

@@ -72,6 +72,24 @@ export function EventTiming({ event }: Props) {
           />
 
           {/*
+           * 메모.
+           *
+           * 제목은 목록에서 알아보는 이름이고, 이건 그 자리에 가서 읽는 것입니다.
+           * 나누지 않으면 '회의' 가 '강남역 3번 출구 2층 회의' 가 되어, 목록이
+           * 주소록처럼 읽힙니다.
+           */}
+          <textarea
+            className={styles.note}
+            rows={2}
+            value={source?.note ?? ''}
+            placeholder="어디서, 무엇을 챙겨서"
+            aria-label={`${event.title} 메모`}
+            onChange={(e) =>
+              dispatch({ type: 'SET_EVENT_NOTE', id: event.sourceId, text: e.target.value })
+            }
+          />
+
+          {/*
            * 건너뛴 날.
            *
            * × 한 번이면 그 날이 목록에서 사라지는데, 되살릴 자리가 없으면 잘못 눌렀을 때

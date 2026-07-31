@@ -218,6 +218,53 @@ describe('반복 규칙 — 못 알아보면 그 날 하루짜리로', () => {
   })
 })
 
+describe('할 일의 색과 시각', () => {
+  const todo = (patch: object) => parse({ todos: [{ id: 't', date: '2026-07-31', title: '가', done: false, order: 0, ...patch }] }).todos[0]
+
+  it('안 정한 색은 안 정한 채로 — 일정과 달리 첫 색으로 떨어뜨리지 않습니다', () => {
+    expect(todo({}).tag).toBeUndefined()
+  })
+
+  it('아는 색은 지킨다', () => {
+    expect(todo({ tag: 'coral' }).tag).toBe('coral')
+  })
+
+  it('예전 이름은 옮겨 준다', () => {
+    expect(todo({ tag: 'sage' }).tag).toBe('mint')
+  })
+
+  it('모르는 값이면 색이 없는 것으로 — 엉뚱한 색이 칠해지는 것보다 낫습니다', () => {
+    expect(todo({ tag: 'neon' }).tag).toBeUndefined()
+    expect(todo({ tag: 7 }).tag).toBeUndefined()
+  })
+
+  it.each([
+    ['제대로 된 시각', '07:00', '07:00'],
+    ['한 자리 시간', '7:30', '7:30'],
+    ['시각이 아님', '아침', undefined],
+    ['숫자', 700, undefined],
+    ['없음', undefined, undefined],
+  ])('%s', (_name, time, want) => {
+    expect(todo({ time }).time).toBe(want)
+  })
+})
+
+describe('일정 메모', () => {
+  const ev = (note: unknown) =>
+    parse({ events: [{ id: 'e', date: '2026-07-31', title: '가', tag: 'blue', note }] }).events[0]
+
+  it('적은 것은 그대로', () => {
+    expect(ev('강남역 3번 출구').note).toBe('강남역 3번 출구')
+  })
+
+  it('비었거나 공백뿐이면 없는 것으로 — 빈 메모가 있는 것처럼 보이면 안 됩니다', () => {
+    expect(ev('').note).toBeUndefined()
+    expect(ev('   ').note).toBeUndefined()
+    expect(ev(undefined).note).toBeUndefined()
+    expect(ev(42).note).toBeUndefined()
+  })
+})
+
 describe('설정 — 한 항목이 비어도 나머지가 살아야 한다', () => {
   it('테마가 없던 예전 데이터는 시스템으로', () => {
     expect(parse({ settings: { accent: '#2b9a66', weekStart: 0, hour12: true } }).settings).toEqual({

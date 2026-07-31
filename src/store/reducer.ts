@@ -77,6 +77,12 @@ export type Action =
   /** 반복 중 그 날 하루만 빼 둡니다. 나머지 날은 그대로 옵니다. */
   | { type: 'SKIP_OCCURRENCE'; id: string; date: ISODate }
   | { type: 'UPDATE_EVENT'; id: string; patch: Partial<PlanEvent> }
+  /**
+   * 메모는 글자를 칠 때마다 옵니다.
+   * UPDATE_EVENT 로 보내면 한 글자마다 되돌리기 막대가 떠서, 날짜 메모(SET_NOTE)와
+   * 같이 따로 둡니다.
+   */
+  | { type: 'SET_EVENT_NOTE'; id: string; text: string }
   | { type: 'DELETE_EVENT'; id: string }
   | { type: 'ADD_TODO'; date: ISODate; title: string }
   | { type: 'TOGGLE_TODO'; id: string }
@@ -189,6 +195,16 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
       return {
         ...state,
         events: state.events.map((e) => (e.id === action.id ? { ...e, ...action.patch } : e)),
+      }
+
+    case 'SET_EVENT_NOTE':
+      return {
+        ...state,
+        events: state.events.map((e) =>
+          e.id === action.id
+            ? { ...e, note: action.text.trim() ? action.text : undefined }
+            : e,
+        ),
       }
 
     case 'DELETE_EVENT':

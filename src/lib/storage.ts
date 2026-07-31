@@ -57,6 +57,11 @@ function migrateTag(tag: unknown): TagColor {
   return TAG_COLORS[0]
 }
 
+/** 'HH:MM' — 아니면 시각으로 쓸 수 없습니다. */
+function isTime(value: unknown): value is string {
+  return typeof value === 'string' && /^\d{1,2}:\d{2}$/.test(value)
+}
+
 /** 배열이 아닌 것이 들어와도 앱이 멈추지 않게 합니다. */
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : []
@@ -303,8 +308,17 @@ export function parseData(raw: unknown): PlannerData | null {
         ...e,
         tag: migrateTag(e.tag),
         repeat: migrateRepeat(e.repeat),
+        note: typeof e.note === 'string' && e.note.trim() ? e.note : undefined,
       })),
-      todos: asArray(parsed.todos),
+      todos: asArray<PlannerData['todos'][number]>(parsed.todos).map((t) => ({
+        ...t,
+        /*
+         * 할 일의 색은 '안 정함' 이 기본이라 일정과 달리 첫 색으로 떨어뜨리지 않습니다.
+         * 모르는 값이 오면 색이 없는 것으로 둡니다 — 엉뚱한 색이 칠해지는 것보다 낫습니다.
+         */
+        tag: t.tag === undefined ? undefined : VALID_TAGS.has(t.tag) ? t.tag : LEGACY_TAG[t.tag],
+        time: isTime(t.time) ? t.time : undefined,
+      })),
       subjects,
       studyLogs: asArray(parsed.studyLogs),
       notes,
@@ -325,14 +339,55 @@ export function parseData(raw: unknown): PlannerData | null {
   }
 }
 
-export function loadData(): PlannerData | null {
+const BROKEN_KEY = 'planme:v1:broken'
+
+/**
+ * 읽지 못한 기록을 옆으로 치워 둡니다.
+ *
+ * 못 읽으면 앱은 빈 플래너로 시작하고, 곧바로 그 빈 것을 저장합니다 — 원본은
+ * 그 순간 사라집니다. 무엇이 잘못됐는지 보기도 전에 없어지는 것이라, 지우기 전에
+ * 글자 그대로 한 벌 떠 둡니다.
+ *
+ * 이미 치워 둔 것이 있으면 덮지 않습니다. 처음 것이 온전했던 마지막 기록입니다.
+ */
+function stashBroken(raw: string): void {
   try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return null
-    return parseData(JSON.parse(raw))
+    if (localStorage.getItem(BROKEN_KEY)) return
+    localStorage.setItem(BROKEN_KEY, raw)
+  } catch {
+    // 자리가 없으면 어쩔 수 없습니다 — 앱은 계속 동작해야 합니다.
+  }
+}
+
+/** 치워 둔 것이 있으면 그 글자 그대로. 없으면 null */
+export function readBroken(): string | null {
+  try {
+    return localStorage.getItem(BROKEN_KEY)
   } catch {
     return null
   }
+}
+
+export function clearBroken(): void {
+  try {
+    localStorage.removeItem(BROKEN_KEY)
+  } catch {
+    /* 무시 */
+  }
+}
+
+export function loadData(): PlannerData | null {
+  let raw: string | null = null
+  try {
+    raw = localStorage.getItem(KEY)
+    if (!raw) return null
+    const parsed = parseData(JSON.parse(raw))
+    if (parsed) return parsed
+  } catch {
+    // JSON 이 아니거나 읽는 도중 터진 것 — 아래에서 함께 치웁니다.
+  }
+  if (raw) stashBroken(raw)
+  return null
 }
 
 export function saveData(data: PlannerData): void {

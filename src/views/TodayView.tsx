@@ -6,6 +6,7 @@ import { SectionHeader } from '@/components/common/SectionHeader'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { EventAdd, draftToEvents } from '@/components/planner/EventAdd'
 import { EventTiming } from '@/components/planner/EventTiming'
+import { TodoMeta } from '@/components/planner/TodoMeta'
 import { formatDateLong, formatDateShort, formatMinutes, formatTime, todayISO } from '@/lib/date'
 import { nextTag } from '@/lib/entry'
 import { tagVar } from '@/lib/tag'
@@ -190,6 +191,7 @@ export function TodayView() {
                         dispatch({ type: 'UPDATE_TODO', id: t.id, patch: { title } })
                       }
                     />
+                    <TodoMeta todo={t} />
                     <button
                       type="button"
                       className={styles.remove}

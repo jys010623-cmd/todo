@@ -298,7 +298,19 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       if (list) list.push(t)
       else map.set(t.date, [t])
     }
-    for (const list of map.values()) list.sort((a, b) => a.order - b.order)
+    /*
+     * 시각을 정한 것이 먼저, 이른 것부터. 안 정한 것은 적은 순서대로 뒤에 붙습니다.
+     * 시각이 있는 것과 없는 것을 섞어 놓으면 '오늘 몇 시에 뭘 하기로 했더라' 를
+     * 목록 전체에서 찾아야 합니다.
+     */
+    for (const list of map.values()) {
+      list.sort((a, b) => {
+        if (a.time && b.time) return timeToMinutes(a.time) - timeToMinutes(b.time)
+        if (a.time) return -1
+        if (b.time) return 1
+        return a.order - b.order
+      })
+    }
     return map
   }, [data.todos])
 

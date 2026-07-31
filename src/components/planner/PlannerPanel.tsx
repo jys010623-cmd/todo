@@ -8,6 +8,7 @@ import { tagVar } from '@/lib/tag'
 import { usePlanner } from '@/store/PlannerContext'
 import { EventAdd, draftToEvents } from './EventAdd'
 import { EventTiming } from './EventTiming'
+import { TodoMeta } from './TodoMeta'
 import styles from './PlannerPanel.module.css'
 
 export function PlannerPanel() {
@@ -102,6 +103,7 @@ export function PlannerPanel() {
                   dataDone={t.done}
                   onCommit={(title) => dispatch({ type: 'UPDATE_TODO', id: t.id, patch: { title } })}
                 />
+                <TodoMeta todo={t} />
                 <button
                   type="button"
                   className={styles.remove}

@@ -4,6 +4,7 @@ import { Checkbox } from '@/components/common/Checkbox'
 import { InlineAdd } from '@/components/common/InlineAdd'
 import { InlineEdit } from '@/components/common/InlineEdit'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { TodoMeta } from '@/components/planner/TodoMeta'
 import {
   addDays,
   dayOfMonth,
@@ -301,6 +302,7 @@ export function WeekView() {
                         dispatch({ type: 'UPDATE_TODO', id: t.id, patch: { title } })
                       }
                     />
+                    <TodoMeta todo={t} compact />
                   </div>
                 ))}
 

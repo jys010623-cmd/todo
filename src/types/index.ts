@@ -48,6 +48,13 @@ export interface PlanEvent {
   title: string
   tag: TagColor
   repeat?: Repeat
+  /**
+   * 제목에 넣기엔 긴 것 — 어디서 만나는지, 무엇을 챙겨 가야 하는지.
+   *
+   * 없으면 '회의' 가 '강남역 3번 출구 스타벅스 2층 회의' 가 됩니다.
+   * 제목은 목록에서 알아보는 이름이고, 이건 그 자리에 가서 읽는 것입니다.
+   */
+  note?: string
 }
 
 /**
@@ -66,6 +73,16 @@ export interface Todo {
   title: string
   done: boolean
   order: number
+  /**
+   * 색. 일정에는 다섯 색이 있는데 할 일만 전부 같은 색이라, 스무 줄이 쌓이면
+   * 무엇이 일이고 무엇이 집안일인지 한눈에 갈라지지 않습니다. 안 정해도 됩니다.
+   */
+  tag?: TagColor
+  /**
+   * 몇 시에 할지. 일정과 달리 '언제까지' 가 아니라 '언제쯤' 이라 끝은 없습니다.
+   * 정하면 그 시각 순으로 줄을 섭니다.
+   */
+  time?: Time
 }
 
 export interface Subject {

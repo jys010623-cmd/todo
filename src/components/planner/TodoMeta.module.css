@@ -1,0 +1,70 @@
+.meta {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+}
+
+/*
+ * 시각은 안 정한 것이 기본입니다 — 안 정했을 때 눈에 띄면 스무 줄이 전부
+ * '--:--' 로 채워져, 정작 정해 둔 시각이 묻힙니다. 비었을 때는 거의 안 보이게
+ * 두었다가 손이 오면 드러납니다.
+ */
+.time {
+  padding: 1px var(--s1);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-cap);
+  color: var(--text-4);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  opacity: 0.35;
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.time:hover,
+.time:focus-visible {
+  opacity: 1;
+  background: var(--surface-sunken);
+}
+
+.time[data-set] {
+  opacity: 1;
+  color: var(--text-2);
+}
+
+.clear {
+  padding: 0 2px;
+  font-size: var(--fs-cap);
+  color: var(--text-4);
+  line-height: 1;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.clear:hover {
+  color: var(--text-1);
+}
+
+/* 안 정했을 때는 빈 동그라미 — 색이 없다는 것도 하나의 상태입니다. */
+.dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: var(--r-full);
+  transition:
+    transform var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.dot[data-empty] {
+  border: 1px solid var(--border);
+}
+
+.dot:hover {
+  transform: scale(1.25);
+}
+
+.dot[data-empty]:hover {
+  border-color: var(--text-3);
+}

@@ -3,7 +3,7 @@ import { useRef, useState } from 'react'
 import { Segmented } from '@/components/common/Segmented'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { daysSince, todayISO } from '@/lib/date'
-import { parseData } from '@/lib/storage'
+import { clearBroken, parseData, readBroken } from '@/lib/storage'
 import { createInitialData } from '@/store/initial'
 import { usePlanner } from '@/store/PlannerContext'
 import type { PlannerData } from '@/types'
@@ -70,14 +70,20 @@ export function SettingsView() {
   /** 가져오기 결과 한 줄 — 성공도 실패도 조용히 지나가면 뭐가 됐는지 알 수 없습니다. */
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
-  const exportData = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
+  /** 읽지 못해 옆으로 치워 둔 기록 — 있으면 되찾을 자리를 내줍니다. */
+  const [broken, setBroken] = useState(() => readBroken())
+
+  const download = (text: string, name: string) => {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
     const a = document.createElement('a')
     a.href = url
-    a.download = `planme-${todayISO()}.json`
+    a.download = name
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const exportData = () => {
+    download(JSON.stringify(data, null, 2), `planme-${todayISO()}.json`)
     // 언제 챙겼는지 남겨 둡니다 — 이걸 알아야 '너무 오래됐다' 고 말해 줄 수 있습니다.
     dispatch({ type: 'SET_SETTINGS', patch: { exportedAt: Date.now() } })
   }
@@ -248,6 +254,46 @@ export function SettingsView() {
                   })
                 }
               />
+            </div>
+          </section>
+        )}
+
+        {/*
+         * 읽지 못한 기록.
+         *
+         * 읽기에 실패하면 앱은 빈 플래너로 시작하고 그 빈 것을 저장합니다 — 원본이
+         * 그 순간 사라집니다. 지우기 전에 글자 그대로 치워 두고, 여기서 되찾게 합니다.
+         */}
+        {broken && (
+          <section className={styles.row}>
+            <div className={styles.label}>
+              <h2 className={styles.labelTitle}>읽지 못한 기록</h2>
+              <p className={styles.labelBody}>
+                지난번에 저장된 것을 읽지 못했습니다. 덮어쓰기 전에 원본을 그대로 치워
+                두었습니다 — 파일로 내려받아 두시면 나중에 살펴볼 수 있습니다.
+                {' '}
+                {/* 작은 것을 '0KB' 로 보여 주면 아무것도 없는 줄 압니다. */}
+                {broken.length < 1024 ? `${broken.length}자` : `${Math.round(broken.length / 1024)}KB`}.
+              </p>
+            </div>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.button}
+                onClick={() => download(broken, `planme-읽지못함-${todayISO()}.json`)}
+              >
+                내려받기
+              </button>
+              <button
+                type="button"
+                className={styles.button}
+                onClick={() => {
+                  clearBroken()
+                  setBroken(null)
+                }}
+              >
+                지우기
+              </button>
             </div>
           </section>
         )}

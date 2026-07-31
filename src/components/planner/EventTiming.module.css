@@ -37,6 +37,20 @@
   white-space: nowrap;
 }
 
+.note {
+  width: 100%;
+  padding: var(--s2);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-cap);
+  line-height: var(--lh-snug);
+  color: var(--text-1);
+  background: var(--surface-sunken);
+}
+
+.note::placeholder {
+  color: var(--text-4);
+}
+
 .skips {
   display: flex;
   align-items: center;

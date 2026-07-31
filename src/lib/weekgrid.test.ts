@@ -5,6 +5,7 @@ import {
   HOUR_H,
   isTimed,
   layoutDay,
+  MAX_LANES,
   minutesAt,
   movedTimes,
   resizedEnd,
@@ -200,11 +201,37 @@ describe('layoutDay — 겹칠 때', () => {
     expect(by(slots, 'c').columns).toBe(1)
   })
 
-  it('여섯이 한꺼번에 겹쳐도 모두 보인다', () => {
-    const slots = layoutDay(Array.from({ length: 6 }, (_, i) => ev(`e${i}`, '09:00', '12:00')))
-    expect(slots.every((s) => s.columns === 6)).toBe(true)
-    expect(new Set(slots.map((s) => s.column)).size).toBe(6)
+  it('셋까지는 나란히 선다', () => {
+    const slots = layoutDay(Array.from({ length: 3 }, (_, i) => ev(`e${i}`, '09:00', '12:00')))
+    expect(slots).toHaveLength(3)
+    expect(slots.every((s) => s.columns === MAX_LANES)).toBe(true)
+    expect(slots.every((s) => s.more === undefined)).toBe(true)
     noneOverlap(slots)
+  })
+
+  it('넘치면 마지막 자리에 접고 몇 개가 더 있는지 말한다', () => {
+    // 여섯을 다 세우면 한 칸이 손톱만 해집니다.
+    const slots = layoutDay(Array.from({ length: 6 }, (_, i) => ev(`e${i}`, '09:00', '12:00')))
+    expect(slots).toHaveLength(MAX_LANES)
+    expect(slots.every((s) => s.columns === MAX_LANES)).toBe(true)
+
+    const folded = slots.filter((s) => s.more !== undefined)
+    expect(folded).toHaveLength(1)
+    // 접힌 자리 하나가 나머지 넷을 대신합니다 — 자기 말고 셋이 더 있습니다.
+    expect(folded[0].more).toBe(3)
+    expect(folded[0].column).toBe(MAX_LANES - 1)
+  })
+
+  it('접힌 자리는 감춘 것들의 처음부터 끝까지를 덮는다', () => {
+    const slots = layoutDay([
+      ev('a', '09:00', '10:00'),
+      ev('b', '09:00', '10:00'),
+      ev('c', '09:00', '09:30'),
+      ev('d', '09:00', '11:00'),
+    ])
+    const folded = slots.find((s) => s.more !== undefined)!
+    expect(folded.top).toBe((9 / 1) * HOUR_H)
+    expect(folded.height).toBe(2 * HOUR_H) // 09:00 – 11:00
   })
 })
 

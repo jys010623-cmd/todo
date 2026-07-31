@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { PlanEvent } from '@/types'
+import type { PlanEvent, Todo } from '@/types'
 import { eventTiming, frequentEvents, timingToPatch, withEnd, withStart } from './entry'
-import { anchorFor, expandEvents, occursOn, repeatLabel } from './repeat'
+import { anchorFor, expandEvents, expandTodos, occursOn, repeatLabel } from './repeat'
 
 const ev = (patch: Partial<PlanEvent> = {}): PlanEvent => ({
   id: 'e',
@@ -209,6 +209,51 @@ describe('반복 이름표', () => {
 
   it('반복이 없으면 이름표도 없다', () => {
     expect(repeatLabel(undefined)).toBeUndefined()
+  })
+})
+
+describe('되풀이하는 할 일', () => {
+  const td = (patch: Partial<Todo> = {}): Todo => ({
+    id: 't',
+    date: '2026-07-30', // 목요일
+    title: '물 마시기',
+    done: false,
+    order: 0,
+    ...patch,
+  })
+  const week = ['2026-07-30', '2026-07-31', '2026-08-01']
+
+  it('되풀이가 없으면 제 날에 하나뿐', () => {
+    const out = expandTodos([td()], week)
+    expect(out).toHaveLength(1)
+    expect(out[0].date).toBe('2026-07-30')
+    expect(out[0].virtual).toBe(false)
+  })
+
+  it('되풀이하면 날마다 펼쳐진다', () => {
+    const out = expandTodos([td({ repeat: { freq: 'daily' } })], week)
+    expect(out.map((t) => t.date)).toEqual(week)
+  })
+
+  it('끝낸 것은 그 날만 끝난 것 — 오늘 체크가 내일까지 끝내지 않습니다', () => {
+    const out = expandTodos([td({ repeat: { freq: 'daily' }, doneOn: ['2026-07-31'] })], week)
+    expect(out.map((t) => t.done)).toEqual([false, true, false])
+  })
+
+  it('펼쳐진 것은 원본을 가리킨다 — 고치거나 지울 때 씁니다', () => {
+    const out = expandTodos([td({ repeat: { freq: 'daily' } })], week)
+    expect(out.every((t) => t.sourceId === 't')).toBe(true)
+    // 목록 key 가 겹치면 안 됩니다.
+    expect(new Set(out.map((t) => t.id)).size).toBe(3)
+  })
+
+  it('일정과 같은 규칙을 쓴다 — 요일·마지막 날', () => {
+    const out = expandTodos(
+      [td({ repeat: { freq: 'weekly', days: [5], until: '2026-08-07' } })],
+      ['2026-07-31', '2026-08-01', '2026-08-07', '2026-08-14'],
+    )
+    // 금요일만, 8/7 까지
+    expect(out.map((t) => t.date)).toEqual(['2026-07-31', '2026-08-07'])
   })
 })
 

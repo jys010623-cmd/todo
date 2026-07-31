@@ -1,10 +1,11 @@
 import { tagVar } from '@/lib/tag'
 import { usePlanner } from '@/store/PlannerContext'
-import { TAG_COLORS, type TagColor, type Todo } from '@/types'
+import { REPEAT_FREQS, TAG_COLORS, type RepeatFreq, type TagColor, type Todo, type TodoOccurrence } from '@/types'
+import { REPEAT_WORD } from '@/lib/repeat'
 import styles from './TodoMeta.module.css'
 
 interface Props {
-  todo: Todo
+  todo: TodoOccurrence
   /** 좁은 자리(주간 칸)에서는 색만 — 시각 칸까지 넣으면 제목이 설 자리가 없습니다. */
   compact?: boolean
 }
@@ -25,8 +26,9 @@ function nextTag(tag: TagColor | undefined): TagColor | undefined {
 export function TodoMeta({ todo, compact }: Props) {
   const { dispatch } = usePlanner()
 
+  // 되풀이에서 펼쳐진 것은 자기 id 가 따로 있어, 고칠 때는 원본을 가리켜야 합니다.
   const patch = (next: Partial<Todo>) =>
-    dispatch({ type: 'UPDATE_TODO', id: todo.id, patch: next })
+    dispatch({ type: 'UPDATE_TODO', id: todo.sourceId, patch: next })
 
   return (
     <div className={styles.meta}>
@@ -50,6 +52,34 @@ export function TodoMeta({ todo, compact }: Props) {
         >
           ×
         </button>
+      )}
+
+      {!compact && (
+        <select
+          className={styles.repeat}
+          data-set={todo.repeat ? true : undefined}
+          value={todo.repeat?.freq ?? ''}
+          aria-label={`${todo.title} 되풀이`}
+          onChange={(e) => {
+            const freq = (e.target.value || undefined) as RepeatFreq | undefined
+            /*
+             * 되풀이를 켜면 그 날부터 시작합니다 — 펼쳐진 날에서 켰다면 원본이 아니라
+             * 지금 보고 있는 날이 시작이어야 합니다. 끄면 끝낸 날 기록도 함께 내려놓습니다.
+             */
+            patch(
+              freq
+                ? { repeat: { freq }, date: todo.date, doneOn: todo.done ? [todo.date] : undefined }
+                : { repeat: undefined, doneOn: undefined, done: todo.done },
+            )
+          }}
+        >
+          <option value="">↻</option>
+          {REPEAT_FREQS.map((freq) => (
+            <option key={freq} value={freq}>
+              {REPEAT_WORD[freq]}
+            </option>
+          ))}
+        </select>
       )}
 
       <button

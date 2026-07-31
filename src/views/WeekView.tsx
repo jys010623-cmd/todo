@@ -291,7 +291,9 @@ export function WeekView() {
                     <Checkbox
                       checked={t.done}
                       label={t.title}
-                      onChange={() => dispatch({ type: 'TOGGLE_TODO', id: t.id })}
+                      onChange={() =>
+                        dispatch({ type: 'TOGGLE_TODO', id: t.sourceId, date: t.date })
+                      }
                     />
                     <InlineEdit
                       value={t.title}
@@ -299,7 +301,7 @@ export function WeekView() {
                       className={styles.todoTitle}
                       dataDone={t.done}
                       onCommit={(title) =>
-                        dispatch({ type: 'UPDATE_TODO', id: t.id, patch: { title } })
+                        dispatch({ type: 'UPDATE_TODO', id: t.sourceId, patch: { title } })
                       }
                     />
                     <TodoMeta todo={t} compact />
@@ -593,6 +595,8 @@ function EventBlock({ slot, hour12, dragging, onDrag, onDragEnd, onCommit, onDel
       className={styles.block}
       data-short={height < HOUR_H * 0.7 || undefined}
       data-narrow={narrow || undefined}
+      /* 셋으로 나뉘면 38px 입니다 — 시각까지 얹으면 제목이 쓸 줄이 한 줄뿐입니다. */
+      data-tiny={slot.columns >= 3 || undefined}
       data-dragging={dragging || undefined}
       onPointerDown={start('move')}
       onPointerMove={move}
@@ -613,6 +617,8 @@ function EventBlock({ slot, hour12, dragging, onDrag, onDragEnd, onCommit, onDel
       }}
     >
       <span className={styles.chipBar} style={{ background: tagVar(event.tag) }} />
+      {/* 접힌 자리 — 좁아서 다 못 세운 것들이 뒤에 이만큼 더 있습니다. */}
+      {slot.more !== undefined && <span className={styles.more}>+{slot.more}</span>}
       <span className={styles.blockTime}>
         {formatTime(event.start, hour12)}
         {!narrow && event.end ? ` – ${formatTime(event.end, hour12)}` : ''}

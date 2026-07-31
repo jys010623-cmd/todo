@@ -30,7 +30,20 @@ export interface TimedSlot<E extends PlanEvent = PlanEvent> {
   /** 열 안에서의 가로 자리 (%) */
   left: number
   width: number
+  /**
+   * 이 자리에 이만큼이 더 있습니다 — 좁아서 접었습니다.
+   *
+   * 넷이 겹치면 한 칸이 28px 이 되어 제목이 한 글자도 온전히 안 들어갑니다.
+   * 다 보여 주는 것이 아니라 몇 개가 더 있는지 알려 주는 편이 낫습니다.
+   */
+  more?: number
 }
+
+/**
+ * 한 열에 나란히 세울 수 있는 최대 칸 수.
+ * 셋까지는 각 칸이 38px 남짓이라 두세 글자는 읽힙니다. 그 아래로는 접습니다.
+ */
+export const MAX_LANES = 3
 
 /** 'HH:MM' 이 아니거나 범위를 벗어나면 null — 저장된 값이 깨져도 그리기는 멈추지 않습니다. */
 function minutesOf(time: string | undefined): number | null {
@@ -72,11 +85,42 @@ export function layoutDay<E extends PlanEvent>(events: E[]): TimedSlot<E>[] {
   let columnEnds: number[] = []
   /** cluster 에 담긴 항목이 몇 번 칸을 쓰는지 */
   let columnOf: number[] = []
+  /** 접힌 자리 → 뒤에 더 있는 개수 */
+  const foldedCount = new Map<number, number>()
 
   const flush = () => {
     if (cluster.length === 0) return
-    const columns = columnEnds.length
+
+    /*
+     * 칸이 너무 많으면 마지막 자리에 몰아 접습니다.
+     * 다 세워 봐야 한 칸이 손톱만 해져 무엇이 무엇인지 알 수 없습니다 —
+     * 접힌 것은 그 날을 눌러 오른쪽 패널에서 온전히 볼 수 있습니다.
+     */
+    const columns = Math.min(columnEnds.length, MAX_LANES)
+    const folded = columnEnds.length > MAX_LANES
     const lane = 100 / columns
+
+    if (folded) {
+      const spare: typeof cluster = []
+      const spareAt: number[] = []
+      cluster.forEach((item, i) => {
+        if (columnOf[i] >= columns - 1) {
+          spare.push(item)
+          spareAt.push(i)
+        }
+      })
+      // 접힌 것들은 맨 뒤 한 자리에 겹쳐 두고, 몇 개가 더 있는지만 말합니다.
+      const top = Math.min(...spare.map((s) => s.start))
+      const bottom = Math.max(...spare.map((s) => s.end))
+      const first = spare.reduce((a, b) => (a.start <= b.start ? a : b))
+      for (const i of spareAt.slice().reverse()) {
+        cluster.splice(i, 1)
+        columnOf.splice(i, 1)
+      }
+      cluster.push({ ...first, start: top, end: bottom })
+      columnOf.push(columns - 1)
+      foldedCount.set(cluster.length - 1, spare.length - 1)
+    }
 
     cluster.forEach((item, i) => {
       const column = columnOf[i]
@@ -115,8 +159,10 @@ export function layoutDay<E extends PlanEvent>(events: E[]): TimedSlot<E>[] {
         columns,
         left: column * lane,
         width: span * lane,
+        more: foldedCount.get(i),
       })
     })
+    foldedCount.clear()
     cluster = []
     columnEnds = []
     columnOf = []

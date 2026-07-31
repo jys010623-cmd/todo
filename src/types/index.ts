@@ -83,6 +83,29 @@ export interface Todo {
    * 정하면 그 시각 순으로 줄을 섭니다.
    */
   time?: Time
+  /**
+   * 되풀이하는 할 일 — 매일 물 마시기, 매주 분리수거.
+   * 일정과 같은 규칙을 씁니다(요일·간격·마지막 날까지).
+   */
+  repeat?: Repeat
+  /**
+   * 되풀이하는 것을 끝낸 날들.
+   *
+   * done 하나로는 안 됩니다 — 오늘 체크하면 내일도 모레도 끝난 것이 되어, 매일 하는
+   * 일이 딱 한 번만 존재하게 됩니다. 날마다 따로 세어야 합니다.
+   * 되풀이하지 않는 할 일은 done 을 그대로 씁니다.
+   */
+  doneOn?: ISODate[]
+}
+
+/**
+ * 화면에 그리는 할 일.
+ * 되풀이에서 펼쳐진 것은 자기 id 가 따로 있고(목록 key 용), sourceId 가 원본을 가리킵니다.
+ */
+export interface TodoOccurrence extends Todo {
+  sourceId: string
+  /** 저장된 것이 아니라 규칙에서 펼쳐 나온 것인지 */
+  virtual: boolean
 }
 
 export interface Subject {

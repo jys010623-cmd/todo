@@ -85,7 +85,8 @@ export type Action =
   | { type: 'SET_EVENT_NOTE'; id: string; text: string }
   | { type: 'DELETE_EVENT'; id: string }
   | { type: 'ADD_TODO'; date: ISODate; title: string }
-  | { type: 'TOGGLE_TODO'; id: string }
+  /** date 는 되풀이하는 할 일에 필요합니다 — 어느 날을 끝냈는지 세야 합니다. */
+  | { type: 'TOGGLE_TODO'; id: string; date: ISODate }
   | { type: 'UPDATE_TODO'; id: string; patch: Partial<Todo> }
   | { type: 'DELETE_TODO'; id: string }
   /**
@@ -222,7 +223,19 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
     case 'TOGGLE_TODO':
       return {
         ...state,
-        todos: state.todos.map((t) => (t.id === action.id ? { ...t, done: !t.done } : t)),
+        todos: state.todos.map((t) => {
+          if (t.id !== action.id) return t
+          if (!t.repeat) return { ...t, done: !t.done }
+          /*
+           * 되풀이하는 것은 날마다 따로 셉니다 — done 하나를 뒤집으면 오늘 체크한 것이
+           * 내일도 끝난 것이 됩니다.
+           */
+          const on = t.doneOn ?? []
+          const next = on.includes(action.date)
+            ? on.filter((d) => d !== action.date)
+            : [...on, action.date]
+          return { ...t, doneOn: next.length > 0 ? next : undefined }
+        }),
       }
 
     case 'UPDATE_TODO':

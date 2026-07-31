@@ -62,6 +62,11 @@ function isTime(value: unknown): value is string {
   return typeof value === 'string' && /^\d{1,2}:\d{2}$/.test(value)
 }
 
+/** 'YYYY-MM-DD' */
+function isDate(value: unknown): value is string {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+}
+
 /** 배열이 아닌 것이 들어와도 앱이 멈추지 않게 합니다. */
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : []
@@ -196,9 +201,6 @@ function migrateRepeat(raw: unknown): Repeat | undefined {
   if (!r || typeof r !== 'object') return undefined
   if (!REPEAT_FREQS.includes(r.freq as RepeatFreq)) return undefined
 
-  const isDate = (d: unknown): d is string =>
-    typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)
-
   const skip = asArray<unknown>(r.skip).filter(isDate)
 
   /*
@@ -318,6 +320,15 @@ export function parseData(raw: unknown): PlannerData | null {
          */
         tag: t.tag === undefined ? undefined : VALID_TAGS.has(t.tag) ? t.tag : LEGACY_TAG[t.tag],
         time: isTime(t.time) ? t.time : undefined,
+        repeat: migrateRepeat(t.repeat),
+        /*
+         * 끝낸 날들. 날짜가 아닌 것이 섞이면 영영 안 지워지는 유령이 됩니다 —
+         * 화면에는 어느 날에도 안 뜨는데 목록에는 남습니다.
+         */
+        doneOn: (() => {
+          const on = asArray<unknown>(t.doneOn).filter(isDate)
+          return on.length > 0 ? [...new Set(on)].sort() : undefined
+        })(),
       })),
       subjects,
       studyLogs: asArray(parsed.studyLogs),

@@ -117,7 +117,8 @@ export function TodayView() {
                       <Checkbox
                         checked={t.done}
                         label={t.title}
-                        onChange={() => dispatch({ type: 'TOGGLE_TODO', id: t.id })}
+                        /* 밀린 것은 되풀이하지 않는 것뿐이라 그 날이 곧 자기 날짜입니다. */
+                        onChange={() => dispatch({ type: 'TOGGLE_TODO', id: t.id, date: t.date })}
                       />
                       <InlineEdit
                         value={t.title}
@@ -180,7 +181,9 @@ export function TodayView() {
                     <Checkbox
                       checked={t.done}
                       label={t.title}
-                      onChange={() => dispatch({ type: 'TOGGLE_TODO', id: t.id })}
+                      onChange={() =>
+                        dispatch({ type: 'TOGGLE_TODO', id: t.sourceId, date: t.date })
+                      }
                     />
                     <InlineEdit
                       value={t.title}
@@ -188,15 +191,17 @@ export function TodayView() {
                       className={styles.todoTitle}
                       dataDone={t.done}
                       onCommit={(title) =>
-                        dispatch({ type: 'UPDATE_TODO', id: t.id, patch: { title } })
+                        dispatch({ type: 'UPDATE_TODO', id: t.sourceId, patch: { title } })
                       }
                     />
                     <TodoMeta todo={t} />
                     <button
                       type="button"
                       className={styles.remove}
-                      aria-label={`${t.title} 할 일 삭제`}
-                      onClick={() => dispatch({ type: 'DELETE_TODO', id: t.id })}
+                      aria-label={
+                        t.repeat ? `${t.title} 되풀이 전체 삭제` : `${t.title} 할 일 삭제`
+                      }
+                      onClick={() => dispatch({ type: 'DELETE_TODO', id: t.sourceId })}
                     >
                       ×
                     </button>

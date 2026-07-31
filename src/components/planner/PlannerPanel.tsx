@@ -94,21 +94,23 @@ export function PlannerPanel() {
                 <Checkbox
                   checked={t.done}
                   label={t.title}
-                  onChange={() => dispatch({ type: 'TOGGLE_TODO', id: t.id })}
+                  onChange={() => dispatch({ type: 'TOGGLE_TODO', id: t.sourceId, date: t.date })}
                 />
                 <InlineEdit
                   value={t.title}
                   label={t.title}
                   className={styles.todoTitle}
                   dataDone={t.done}
-                  onCommit={(title) => dispatch({ type: 'UPDATE_TODO', id: t.id, patch: { title } })}
+                  onCommit={(title) =>
+                    dispatch({ type: 'UPDATE_TODO', id: t.sourceId, patch: { title } })
+                  }
                 />
                 <TodoMeta todo={t} />
                 <button
                   type="button"
                   className={styles.remove}
                   aria-label={`${t.title} 할 일 삭제`}
-                  onClick={() => dispatch({ type: 'DELETE_TODO', id: t.id })}
+                  onClick={() => dispatch({ type: 'DELETE_TODO', id: t.sourceId })}
                 >
                   ×
                 </button>

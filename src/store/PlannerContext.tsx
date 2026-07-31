@@ -12,10 +12,18 @@ import {
 
 import { readableOn } from '@/lib/color'
 import { isSameMonth, monthGrid, timeToMinutes, todayISO, weekDays } from '@/lib/date'
-import { expandEvents } from '@/lib/repeat'
+import { expandEvents, expandTodos } from '@/lib/repeat'
 import { formatHash, parseHash } from '@/lib/route'
 import { loadData, saveData } from '@/lib/storage'
-import type { EventOccurrence, ISODate, PlannerData, Subject, Todo, ViewId } from '@/types'
+import type {
+  EventOccurrence,
+  ISODate,
+  PlannerData,
+  Subject,
+  Todo,
+  TodoOccurrence,
+  ViewId,
+} from '@/types'
 import { createInitialData } from './initial'
 import { reducer, type Action } from './reducer'
 
@@ -97,7 +105,8 @@ interface PlannerContextValue {
 
   /** 반복이 펼쳐진 뒤의 모습 — 지우거나 고칠 때는 sourceId 를 씁니다. */
   eventsByDate: Map<ISODate, EventOccurrence[]>
-  todosByDate: Map<ISODate, Todo[]>
+  /** 되풀이가 펼쳐진 뒤의 모습 — 지우거나 고칠 때는 sourceId 를 씁니다. */
+  todosByDate: Map<ISODate, TodoOccurrence[]>
   studyMinutesByDate: Map<ISODate, number>
   subjectById: Map<string, Subject>
 
@@ -292,8 +301,9 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   }, [data.events, visibleDates])
 
   const todosByDate = useMemo(() => {
-    const map = new Map<ISODate, Todo[]>()
-    for (const t of data.todos) {
+    const map = new Map<ISODate, TodoOccurrence[]>()
+    // 되풀이하는 것은 규칙만 저장돼 있어, 일정과 마찬가지로 그릴 날짜만 펼칩니다.
+    for (const t of expandTodos(data.todos, visibleDates)) {
       const list = map.get(t.date)
       if (list) list.push(t)
       else map.set(t.date, [t])
@@ -312,7 +322,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       })
     }
     return map
-  }, [data.todos])
+  }, [data.todos, visibleDates])
 
   const studyMinutesByDate = useMemo(() => {
     const map = new Map<ISODate, number>()
@@ -335,7 +345,12 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const overdueTodos = useMemo(() => {
     const today = todayISO()
     return data.todos
-      .filter((t) => !t.done && t.date < today)
+      /*
+       * 되풀이하는 것은 밀린 것으로 세지 않습니다.
+       * 매일 하는 일은 안 한 날이 지나가면 그냥 지나간 것이지, 오늘로 끌고 올 것이
+       * 아닙니다. 세려면 시작한 날까지 거슬러 다 펼쳐야 해서 끝도 없습니다.
+       */
+      .filter((t) => !t.repeat && !t.done && t.date < today)
       .sort((a, b) => (a.date === b.date ? a.order - b.order : a.date < b.date ? -1 : 1))
   }, [data.todos])
 

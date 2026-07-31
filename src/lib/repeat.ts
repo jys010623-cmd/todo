@@ -1,5 +1,16 @@
 import { dayOfWeek, parseISO, startOfWeek, toISO } from '@/lib/date'
-import type { EventOccurrence, ISODate, PlanEvent, Repeat, RepeatFreq } from '@/types'
+import type {
+  EventOccurrence,
+  ISODate,
+  PlanEvent,
+  Repeat,
+  RepeatFreq,
+  Todo,
+  TodoOccurrence,
+} from '@/types'
+
+/** 규칙을 들고 시작 날짜가 있는 것 — 일정과 할 일이 같은 규칙을 씁니다. */
+type Repeating = { date: ISODate; repeat?: Repeat }
 
 /**
  * 반복 일정.
@@ -56,7 +67,7 @@ function monthsBetween(from: ISODate, to: ISODate): number {
  * 매달은 '같은 날짜' 입니다. 31일에 시작한 것은 30일까지인 달을 건너뜁니다 —
  * 없는 날짜를 말일로 당기면 사람이 적어 둔 것과 달라집니다.
  */
-export function occursOn(event: PlanEvent, date: ISODate): boolean {
+export function occursOn(event: Repeating, date: ISODate): boolean {
   const repeat = event.repeat
   if (!repeat) return event.date === date
   // 시작 전에는 오지 않습니다.
@@ -148,6 +159,37 @@ export function expandEvents(events: PlanEvent[], dates: Iterable<ISODate>): Eve
     }
     for (const date of wanted) {
       if (occursOn(event, date)) out.push(occurrenceOn(event, date))
+    }
+  }
+  return out
+}
+
+/**
+ * 할 일도 같은 방식으로 펼칩니다.
+ *
+ * 다만 끝냈는지는 날마다 다릅니다 — 매일 하는 일에 done 하나만 두면 오늘 체크한 것이
+ * 내일도 끝난 것이 됩니다. 되풀이하는 것은 doneOn 에 그 날이 있는지로 봅니다.
+ */
+export function expandTodos(todos: Todo[], dates: Iterable<ISODate>): TodoOccurrence[] {
+  const wanted = [...dates]
+  const out: TodoOccurrence[] = []
+
+  for (const todo of todos) {
+    if (!todo.repeat) {
+      out.push({ ...todo, sourceId: todo.id, virtual: false })
+      continue
+    }
+    for (const date of wanted) {
+      if (!occursOn(todo, date)) continue
+      const virtual = date !== todo.date
+      out.push({
+        ...todo,
+        date,
+        id: virtual ? `${todo.id}@${date}` : todo.id,
+        sourceId: todo.id,
+        virtual,
+        done: todo.doneOn?.includes(date) ?? false,
+      })
     }
   }
   return out

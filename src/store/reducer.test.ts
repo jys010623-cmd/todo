@@ -58,6 +58,42 @@ describe('MOVE_TODOS — 밀린 할 일 이월', () => {
   })
 })
 
+describe('SKIP_OCCURRENCE — 되풀이에서 하루만 빼기', () => {
+  it('되풀이하는 할 일의 그 날만 빠지고 규칙은 남는다', () => {
+    const state = base({ todos: [{ ...td('t', D, 0), repeat: { freq: 'daily' } }] })
+    const next = reducer(state, { type: 'SKIP_OCCURRENCE', kind: 'todo', id: 't', date: '2026-08-01' })
+
+    expect(next.todos).toHaveLength(1)
+    expect(next.todos[0].repeat).toEqual({ freq: 'daily', skip: ['2026-08-01'] })
+  })
+
+  it('같은 날을 두 번 빼도 한 번만 쌓인다', () => {
+    const state = base({ todos: [{ ...td('t', D, 0), repeat: { freq: 'daily' } }] })
+    const once = reducer(state, { type: 'SKIP_OCCURRENCE', kind: 'todo', id: 't', date: D })
+    const twice = reducer(once, { type: 'SKIP_OCCURRENCE', kind: 'todo', id: 't', date: D })
+
+    expect(twice.todos[0].repeat?.skip).toEqual([D])
+  })
+
+  it('되풀이가 아닌 할 일은 건드리지 않는다', () => {
+    const state = base({ todos: [td('t', D, 0)] })
+    const next = reducer(state, { type: 'SKIP_OCCURRENCE', kind: 'todo', id: 't', date: D })
+
+    expect(next.todos[0].repeat).toBeUndefined()
+  })
+
+  it('kind 가 가리키는 쪽만 바뀐다 — 일정과 할 일의 id 가 같아도', () => {
+    const state = base({
+      todos: [{ ...td('x', D, 0), repeat: { freq: 'daily' } }],
+      events: [{ id: 'x', date: D, title: 'x', tag: 'mint' as const, repeat: { freq: 'daily' as const } }],
+    })
+    const next = reducer(state, { type: 'SKIP_OCCURRENCE', kind: 'todo', id: 'x', date: D })
+
+    expect(next.todos[0].repeat?.skip).toEqual([D])
+    expect(next.events[0].repeat?.skip).toBeUndefined()
+  })
+})
+
 describe('만다라트', () => {
   const withMandal = () =>
     base({

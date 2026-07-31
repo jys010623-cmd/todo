@@ -78,7 +78,12 @@ export function TodayView() {
                       }
                       onClick={() =>
                         e.virtual
-                          ? dispatch({ type: 'SKIP_OCCURRENCE', id: e.sourceId, date: e.date })
+                          ? dispatch({
+                              type: 'SKIP_OCCURRENCE',
+                              kind: 'event',
+                              id: e.sourceId,
+                              date: e.date,
+                            })
                           : dispatch({ type: 'DELETE_EVENT', id: e.sourceId })
                       }
                     >
@@ -198,10 +203,18 @@ export function TodayView() {
                     <button
                       type="button"
                       className={styles.remove}
-                      aria-label={
-                        t.repeat ? `${t.title} 되풀이 전체 삭제` : `${t.title} 할 일 삭제`
+                      aria-label={t.virtual ? `${t.title} 이 날만 건너뛰기` : `${t.title} 할 일 삭제`}
+                      onClick={() =>
+                        // 일정과 같습니다 — 펼쳐 나온 날은 그 날만, 전부 지우려면 처음 적은 날에서.
+                        t.virtual
+                          ? dispatch({
+                              type: 'SKIP_OCCURRENCE',
+                              kind: 'todo',
+                              id: t.sourceId,
+                              date: t.date,
+                            })
+                          : dispatch({ type: 'DELETE_TODO', id: t.sourceId })
                       }
-                      onClick={() => dispatch({ type: 'DELETE_TODO', id: t.sourceId })}
                     >
                       ×
                     </button>

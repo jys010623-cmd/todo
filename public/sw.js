@@ -15,10 +15,51 @@ const VERSION = 'planme-v1'
 /** 앱 껍데기 — 주소가 무엇이든 결국 이 문서 하나로 들어옵니다(해시 라우팅). */
 const SHELL = './index.html'
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(VERSION).then((cache) => cache.add(SHELL)),
+/**
+ * 껍데기가 부르는 것들을 미리 받아 둡니다.
+ *
+ * 처음 열 때는 이 워커가 페이지를 잡기 전에 JS·CSS 가 이미 받아집니다. 그대로 두면
+ * 한 번 보고 바로 인터넷이 끊겼을 때 아무것도 안 열립니다 — 두 번째 방문부터만
+ * 오프라인이 되는 셈입니다.
+ *
+ * 목록을 손으로 적지 않고 껍데기에서 읽어 냅니다. 빌드마다 이름에 해시가 붙어
+ * 적어 두면 반드시 어긋납니다.
+ */
+async function warm(cache) {
+  const res = await fetch(SHELL, { cache: 'reload' })
+  await cache.put(SHELL, res.clone())
+
+  const html = await res.text()
+  const urls = new Set()
+  for (const m of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
+    const raw = m[1]
+    if (!raw || raw.startsWith('#') || raw.endsWith('.html')) continue
+
+    const url = new URL(raw, self.registration.scope)
+    /*
+     * 파일만 받습니다. preconnect 처럼 주소만 적힌 것을 받으면 엉뚱한 문서가
+     * 그 자리에 담겨, 나중에 그 주소로 온 요청에 그것이 나갑니다.
+     */
+    if (!url.pathname.split('/').pop()?.includes('.')) continue
+    urls.add(url.href)
+  }
+
+  /*
+   * 하나가 실패해도 나머지는 담습니다 — 오프라인은 덤이지 조건이 아닙니다.
+   * no-cors 로 받지 않습니다. 그렇게 받은 것은 읽을 수 없는 응답이라, 스타일시트로는
+   * 쓰이지 못한 채 자리만 차지합니다.
+   */
+  await Promise.all(
+    [...urls].map((u) =>
+      fetch(u)
+        .then((r) => (keepable(r) ? cache.put(u, r) : undefined))
+        .catch(() => undefined),
+    ),
   )
+}
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(VERSION).then(warm))
   // 새 판이 준비되면 기다리지 않고 넘깁니다 — 옛 판이 남아 있으면 고친 것이 안 보입니다.
   self.skipWaiting()
 })
@@ -35,6 +76,20 @@ self.addEventListener('activate', (event) => {
 /** 이 응답을 담아 둘 만한가 — 부분 응답이나 오류를 담으면 다음에 깨진 것이 나옵니다. */
 function keepable(response) {
   return response && (response.status === 200 || response.type === 'opaque')
+}
+
+/**
+ * 담아 둔 것 찾기 — Vary 는 보지 않습니다.
+ *
+ * 서버가 응답에 'Vary: Origin' 을 붙이면, 캐시는 담을 때와 찾을 때의 Origin 헤더가
+ * 같은지까지 따집니다. 미리 받아 둘 때는 주소만 가지고 담아서 그 헤더가 없는데,
+ * 정작 브라우저가 보내는 요청(<script crossorigin>)에는 붙습니다 — 주소가 같은데도
+ * 못 찾고, 인터넷이 없으면 그대로 빈 화면이 됩니다.
+ *
+ * 이 앱은 같은 주소에 한 가지만 내주므로 Vary 를 따질 이유가 없습니다.
+ */
+function stored(request) {
+  return caches.match(request, { ignoreVary: true })
 }
 
 self.addEventListener('fetch', (event) => {
@@ -56,7 +111,7 @@ self.addEventListener('fetch', (event) => {
           }
           return res
         })
-        .catch(() => caches.match(SHELL).then((hit) => hit ?? Response.error())),
+        .catch(() => stored(SHELL).then((hit) => hit ?? Response.error())),
     )
     return
   }
@@ -67,7 +122,7 @@ self.addEventListener('fetch', (event) => {
    * 같은 내용이라 굳이 다시 받을 이유가 없습니다.
    */
   event.respondWith(
-    caches.match(request).then((hit) => {
+    stored(request).then((hit) => {
       if (hit) return hit
       return fetch(request)
         .then((res) => {

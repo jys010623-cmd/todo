@@ -74,8 +74,11 @@ export type Action =
       tag: TagColor
       repeat?: Repeat
     }
-  /** 반복 중 그 날 하루만 빼 둡니다. 나머지 날은 그대로 옵니다. */
-  | { type: 'SKIP_OCCURRENCE'; id: string; date: ISODate }
+  /**
+   * 반복 중 그 날 하루만 빼 둡니다. 나머지 날은 그대로 옵니다.
+   * 일정과 할 일이 같은 규칙을 쓰므로 하는 일도 같습니다 — 어느 쪽인지만 받습니다.
+   */
+  | { type: 'SKIP_OCCURRENCE'; kind: 'event' | 'todo'; id: string; date: ISODate }
   | { type: 'UPDATE_EVENT'; id: string; patch: Partial<PlanEvent> }
   /**
    * 메모는 글자를 칠 때마다 옵니다.
@@ -182,15 +185,19 @@ export function reducer(state: PlannerData, action: Action): PlannerData {
       return { ...state, events: [...state.events, event] }
     }
 
-    case 'SKIP_OCCURRENCE':
-      return {
-        ...state,
-        events: state.events.map((e) => {
-          if (e.id !== action.id || !e.repeat) return e
-          if (e.repeat.skip?.includes(action.date)) return e
-          return { ...e, repeat: { ...e.repeat, skip: [...(e.repeat.skip ?? []), action.date] } }
-        }),
-      }
+    case 'SKIP_OCCURRENCE': {
+      const skip = <T extends { id: string; repeat?: Repeat }>(items: T[]): T[] =>
+        items.map((it) => {
+          if (it.id !== action.id || !it.repeat) return it
+          // 두 번 눌러도 같은 날이 두 번 들어가지 않게 합니다.
+          if (it.repeat.skip?.includes(action.date)) return it
+          return { ...it, repeat: { ...it.repeat, skip: [...(it.repeat.skip ?? []), action.date] } }
+        })
+
+      return action.kind === 'todo'
+        ? { ...state, todos: skip(state.todos) }
+        : { ...state, events: skip(state.events) }
+    }
 
     case 'UPDATE_EVENT':
       return {

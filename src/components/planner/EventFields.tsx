@@ -30,6 +30,14 @@ interface Props {
    * 하나 켜는 순간 원래 요일이 빠져, 보고 있던 줄이 눈앞에서 사라집니다.
    */
   anchorDay?: number
+  /**
+   * 반복 규칙만 — 시각 칸은 뺍니다.
+   *
+   * 할 일에도 같은 규칙(요일·간격·마지막 날)이 붙는데, 할 일의 시각은 '몇 시까지' 가
+   * 아니라 '몇 시쯤' 하나뿐이라 여기의 시작·끝 두 칸이 갈 자리가 없습니다.
+   * 그 한 칸은 할 일 줄에 이미 따로 있습니다.
+   */
+  repeatOnly?: boolean
 }
 
 /**
@@ -39,7 +47,7 @@ interface Props {
  * 직접 그린 목록보다 나은 점은 모양이 아니라, 기기마다 이미 있는 것(모바일의 시계 UI,
  * 키보드로 숫자를 바로 치는 것, 오전·오후 표기)을 그대로 받는다는 점입니다.
  */
-export function EventFields({ value, onChange, name, anchorDay }: Props) {
+export function EventFields({ value, onChange, name, anchorDay, repeatOnly }: Props) {
   const id = useId()
 
   /** 화면에 켜 보일 요일 — 안 고른 상태는 '시작한 날의 요일 하나' 와 같습니다. */
@@ -48,63 +56,67 @@ export function EventFields({ value, onChange, name, anchorDay }: Props) {
 
   return (
     <div className={styles.fields}>
-      <div className={styles.field}>
-        <label className={styles.label} htmlFor={`${id}-start`}>
-          시작
-        </label>
-        <input
-          id={`${id}-start`}
-          type="time"
-          className={styles.input}
-          value={value.start ?? ''}
-          aria-label={`${name} 시작 시각`}
-          /*
-           * 빈 값은 지우려는 뜻으로 보지 않습니다.
-           *
-           * 칸 하나(오전·오후 같은)에 엉뚱한 키가 들어가면 브라우저가 값을 통째로
-           * 비웁니다. 그걸 '지웠다' 로 받으면 손이 미끄러진 것만으로 적어 둔 시간이
-           * 사라집니다 — 지우는 것은 옆의 버튼이 따로 맡습니다.
-           */
-          onChange={(e) => e.target.value && onChange(withStart(value, e.target.value))}
-        />
-        {value.start && (
-          <button
-            type="button"
-            className={styles.clear}
-            aria-label={`${name} 종일로`}
-            onClick={() => onChange(withStart(value, undefined))}
-          >
-            종일로
-          </button>
-        )}
-      </div>
+      {!repeatOnly && (
+        <>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor={`${id}-start`}>
+              시작
+            </label>
+            <input
+              id={`${id}-start`}
+              type="time"
+              className={styles.input}
+              value={value.start ?? ''}
+              aria-label={`${name} 시작 시각`}
+              /*
+               * 빈 값은 지우려는 뜻으로 보지 않습니다.
+               *
+               * 칸 하나(오전·오후 같은)에 엉뚱한 키가 들어가면 브라우저가 값을 통째로
+               * 비웁니다. 그걸 '지웠다' 로 받으면 손이 미끄러진 것만으로 적어 둔 시간이
+               * 사라집니다 — 지우는 것은 옆의 버튼이 따로 맡습니다.
+               */
+              onChange={(e) => e.target.value && onChange(withStart(value, e.target.value))}
+            />
+            {value.start && (
+              <button
+                type="button"
+                className={styles.clear}
+                aria-label={`${name} 종일로`}
+                onClick={() => onChange(withStart(value, undefined))}
+              >
+                종일로
+              </button>
+            )}
+          </div>
 
-      <div className={styles.field} data-off={!value.start || undefined}>
-        <label className={styles.label} htmlFor={`${id}-end`}>
-          끝
-        </label>
-        <input
-          id={`${id}-end`}
-          type="time"
-          className={styles.input}
-          value={value.end ?? ''}
-          /* 시작이 없으면 끝만으로는 그릴 자리가 없습니다. */
-          disabled={!value.start}
-          min={value.start}
-          aria-label={`${name} 끝 시각`}
-          onChange={(e) => e.target.value && onChange(withEnd(value, e.target.value))}
-        />
-        {value.end && (
-          <button
-            type="button"
-            className={styles.clear}
-            aria-label={`${name} 끝 시각 지우기`}
-            onClick={() => onChange(withEnd(value, undefined))}
-          >
-            ×
-          </button>
-        )}
-      </div>
+          <div className={styles.field} data-off={!value.start || undefined}>
+            <label className={styles.label} htmlFor={`${id}-end`}>
+              끝
+            </label>
+            <input
+              id={`${id}-end`}
+              type="time"
+              className={styles.input}
+              value={value.end ?? ''}
+              /* 시작이 없으면 끝만으로는 그릴 자리가 없습니다. */
+              disabled={!value.start}
+              min={value.start}
+              aria-label={`${name} 끝 시각`}
+              onChange={(e) => e.target.value && onChange(withEnd(value, e.target.value))}
+            />
+            {value.end && (
+              <button
+                type="button"
+                className={styles.clear}
+                aria-label={`${name} 끝 시각 지우기`}
+                onClick={() => onChange(withEnd(value, undefined))}
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </>
+      )}
 
       <div className={styles.field}>
         <label className={styles.label} htmlFor={`${id}-repeat`}>

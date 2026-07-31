@@ -277,7 +277,12 @@ export function WeekView() {
                       }
                       onClick={() =>
                         e.virtual
-                          ? dispatch({ type: 'SKIP_OCCURRENCE', id: e.sourceId, date: e.date })
+                          ? dispatch({
+                              type: 'SKIP_OCCURRENCE',
+                              kind: 'event',
+                              id: e.sourceId,
+                              date: e.date,
+                            })
                           : dispatch({ type: 'DELETE_EVENT', id: e.sourceId })
                       }
                     >
@@ -470,6 +475,7 @@ export function WeekView() {
                         slot.event.virtual
                           ? dispatch({
                               type: 'SKIP_OCCURRENCE',
+                              kind: 'event',
                               id: slot.event.sourceId,
                               date: slot.event.date,
                             })
